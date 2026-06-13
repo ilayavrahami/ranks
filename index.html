@@ -104,7 +104,7 @@
         <section class="glass-card rounded-3xl p-8 border border-white/10 relative overflow-hidden shadow-2xl text-center sm:text-right flex flex-col sm:flex-row justify-between items-center gap-6">
             <div class="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 blur-[100px] rounded-full pointer-events-none"></div>
             <div class="space-y-3">
-                <span class="bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-3 py-1 rounded-full text-xs font-bold tracking-wide font-minecraft uppercase">🔥 השרת באוויר</span>
+                <span id="serverStatusBadge" class="bg-gray-500/10 text-gray-400 border border-gray-500/20 px-3 py-1 rounded-full text-xs font-bold tracking-wide font-minecraft uppercase">⏳ בודק סטטוס שרת...</span>
                 <h1 class="font-minecraft text-3xl sm:text-4xl font-black text-white tracking-wide">ברוכים הבאים ל-SummerLag!</h1>
                 <p class="text-base text-gray-400 max-w-2xl leading-relaxed">
                     שחקנים יכולים להגיש בקשה לדרגה באמצעות צילום מסך כהוכחה. האדמינים יבדקו את הבקשה ויאשרו או ידחו אותה. <span class="text-cyan-400 font-bold">לא ניתן לדלג על דרגות!</span>
@@ -134,6 +134,36 @@
             </h3>
             <div id="announcementsList" class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 </div>
+        </section>
+
+        <section id="statsSection" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="glass-card rounded-2xl p-5 border border-white/5 bg-black/20 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <div>
+                    <div class="text-[11px] text-gray-500 font-bold uppercase tracking-wider">שחקנים רשומים באתר</div>
+                    <div id="statTotalUsers" class="text-2xl font-black text-white font-minecraft">0</div>
+                </div>
+            </div>
+            <div class="glass-card rounded-2xl p-5 border border-white/5 bg-black/20 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div>
+                    <div class="text-[11px] text-gray-500 font-bold uppercase tracking-wider">דרגות שאושרו העונה</div>
+                    <div id="statApprovedApps" class="text-2xl font-black text-white font-minecraft">0</div>
+                </div>
+            </div>
+            <div class="glass-card rounded-2xl p-5 border border-white/5 bg-black/20 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-chart-simple"></i>
+                </div>
+                <div>
+                    <div class="text-[11px] text-gray-500 font-bold uppercase tracking-wider">הדרגה הפופולרית ביותר</div>
+                    <div id="statCommonRank" class="text-sm font-bold text-purple-300 font-minecraft">⏳ מחשב...</div>
+                </div>
+            </div>
         </section>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -326,7 +356,6 @@
             appId: "1:381434699530:web:fbb601522aabef2a2044f3"
         };
 
-        // אתחול המערכת של גוגל
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
@@ -334,7 +363,7 @@
         let cloud_users = {};
         let cloud_applications = {};
         let cloud_history = {};
-        let cloud_announcements = {}; // משתנה מודעות גלובלי חדש
+        let cloud_announcements = {}; 
         let currentUser = JSON.parse(sessionStorage.getItem('session_user')) || null;
 
         // --- 2. RANKS STATIC DATA ---
@@ -362,13 +391,12 @@
             let loadedTables = 0;
             const checkLoader = () => {
                 loadedTables++;
-                if(loadedTables >= 4) { // הועלה ל-4 כדי לכלול את טבלת המודעות
+                if(loadedTables >= 4) { 
                     document.getElementById('appLoader').classList.add('hidden');
                     initApp();
                 }
             };
 
-            // האזנה למשתמשים בענן
             database.ref('users').on('value', (snapshot) => {
                 cloud_users = snapshot.val() || {};
                 if (Object.keys(cloud_users).length === 0) {
@@ -385,25 +413,22 @@
                     const updatedMe = Object.values(cloud_users).find(u => u.minecraft_username.toLowerCase() === currentUser.minecraft_username.toLowerCase());
                     if (updatedMe) { currentUser = updatedMe; sessionStorage.setItem('session_user', JSON.stringify(currentUser)); }
                 }
-                if(loadedTables >= 4) { renderPlayerDashboard(); renderAdminPanel(); renderRankCatalog(); renderLeaderboard(); }
+                if(loadedTables >= 4) { renderPlayerDashboard(); renderAdminPanel(); renderRankCatalog(); renderLeaderboard(); renderCommunityStats(); }
                 else { checkLoader(); }
             });
 
-            // האזנה לבקשות דרגה
             database.ref('applications').on('value', (snapshot) => {
                 cloud_applications = snapshot.val() || {};
-                if(loadedTables >= 4) { renderPlayerDashboard(); renderAdminPanel(); }
+                if(loadedTables >= 4) { renderPlayerDashboard(); renderAdminPanel(); renderCommunityStats(); }
                 else { checkLoader(); }
             });
 
-            // האזנה להיסטוריה
             database.ref('history').on('value', (snapshot) => {
                 cloud_history = snapshot.val() || {};
                 if(loadedTables >= 4) { renderAdminPanel(); }
                 else { checkLoader(); }
             });
 
-            // האזנה למודעות (חדש - סנכרון מודעות)
             database.ref('announcements').on('value', (snapshot) => {
                 cloud_announcements = snapshot.val() || {};
                 renderAnnouncements();
@@ -412,7 +437,80 @@
             });
         }
 
-        // --- 4. UX COOPERATION FUNCTIONS ---
+        // --- 4. MINECRAFT SERVER STATUS API ---
+        function checkMinecraftServerStatus() {
+            const badge = document.getElementById('serverStatusBadge');
+            if(!badge) return;
+            const serverIP = "ilay1213.aternos.me";
+            fetch(`https://api.mcsrvstat.us/2/${serverIP}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.online) {
+                        const onlinePlayers = data.players.online || 0;
+                        const maxPlayers = data.players.max || 20;
+                        badge.className = "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-xs font-bold tracking-wide font-minecraft uppercase animate-pulse";
+                        badge.innerHTML = `🟢 שרת באוויר | ${onlinePlayers}/${maxPlayers} שחקנים מחוברים`;
+                    } else {
+                        badge.className = "bg-red-500/10 text-red-400 border border-red-500/20 px-3 py-1 rounded-full text-xs font-bold tracking-wide font-minecraft uppercase";
+                        badge.innerHTML = `🔴 השרת כבוי באטרנוס`;
+                    }
+                })
+                .catch(() => {
+                    badge.className = "bg-gray-500/10 text-gray-400 border border-gray-500/20 px-3 py-1 rounded-full text-xs font-bold tracking-wide font-minecraft uppercase";
+                    badge.innerHTML = `⚪ לא ניתן לקרוא סטטוס`;
+                });
+        }
+
+        // --- 5. COMMUNITY STATS ENGINE (חדש - חישוב סטטיסטיקות ענן דינמיות) ---
+        function renderCommunityStats() {
+            const totalUsersEl = document.getElementById('statTotalUsers');
+            const approvedAppsEl = document.getElementById('statApprovedApps');
+            const commonRankEl = document.getElementById('statCommonRank');
+            
+            if(!totalUsersEl || !approvedAppsEl || !commonRankEl) return;
+            
+            const users = Object.values(cloud_users);
+            const apps = Object.values(cloud_applications);
+            
+            // 1. ספירת שחקנים רשומים (ללא האדמינים)
+            const realPlayers = users.filter(u => 
+                u.minecraft_username.toLowerCase() !== 'adminsummer' && 
+                u.minecraft_username.toLowerCase() !== 'summeradmin' && 
+                u.role !== 'admin'
+            );
+            totalUsersEl.innerText = realPlayers.length;
+            
+            // 2. ספירת דרגות שאושרו העונה
+            const approvedCount = apps.filter(a => a.status === 'Approved').length;
+            approvedAppsEl.innerText = approvedCount;
+            
+            // 3. חישוב הדרגה הכי פופולרית/נפוצה בשרת
+            if(realPlayers.length === 0) {
+                commonRankEl.innerText = "אין שחקנים";
+                return;
+            }
+            
+            const rankCounts = {};
+            realPlayers.forEach(u => {
+                const r = u.current_rank || "Affiliate";
+                rankCounts[r] = (rankCounts[r] || 0) + 1;
+            });
+            
+            let maxCount = -1;
+            let mostCommonRankId = "Affiliate";
+            
+            for(const rankId in rankCounts) {
+                if(rankCounts[rankId] > maxCount) {
+                    maxCount = rankCounts[rankId];
+                    mostCommonRankId = rankId;
+                }
+            }
+            
+            const rankObj = RANKS_DATA.find(r => r.id === mostCommonRankId) || RANKS_DATA[0];
+            commonRankEl.innerHTML = `<span class="text-white">${rankObj.icon} ${rankObj.name}</span> <span class="text-xs text-gray-400">(${maxCount} שחקנים)</span>`;
+        }
+
+        // --- 6. UX COOPERATION FUNCTIONS ---
         function copyServerIP() {
             const ipText = document.getElementById('serverIPText').innerText;
             navigator.clipboard.writeText(ipText).then(() => {
@@ -435,7 +533,6 @@
             }, 4000);
         }
 
-        // --- 5. LEADERBOARD GENERATOR (EXCLUDES ALL ADMINS COMPLETELY) ---
         function renderLeaderboard() {
             const container = document.getElementById('leaderboardList');
             if(!container) return;
@@ -473,7 +570,6 @@
             });
         }
 
-        // --- 6. ANNOUNCEMENTS RENDERING SYSTEM (חדש - הצגת מודעות במסך הבית) ---
         function renderAnnouncements() {
             const section = document.getElementById('announcementsSection');
             const container = document.getElementById('announcementsList');
@@ -670,6 +766,8 @@
             renderRankCatalog();
             renderLeaderboard();
             renderAnnouncements();
+            renderCommunityStats();
+            checkMinecraftServerStatus(); 
             
             if (currentUser) {
                 document.getElementById('authSection').classList.add('hidden');
@@ -841,7 +939,6 @@
                 });
             }
 
-            // רשימת משתמשים עם מחיקה
             const usersList = document.getElementById('adminUsersList');
             usersList.innerHTML = "";
             Object.values(cloud_users).forEach(u => {
@@ -860,7 +957,6 @@
                 usersList.appendChild(row);
             });
 
-            // ניהול מודעות בתוך פאנל הניהול
             const adminAnnQueue = document.getElementById('adminAnnouncementsQueue');
             if(adminAnnQueue) {
                 adminAnnQueue.innerHTML = "";
@@ -911,7 +1007,6 @@
             database.ref('applications/' + appId).remove(); showToast("הרשומה נמחקה מהענן.");
         }
 
-        // הפעלת סנכרון הענן ברגע עליית הדף
         startCloudSynchronization();
     </script>
 </body>
