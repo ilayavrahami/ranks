@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SummerLag Survival - מערכת הדרגות</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Rubik:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Assistant', 'sans-serif'],
+                        minecraft: ['Rubik', 'sans-serif'],
+                    },
+                    colors: {
+                        mcDark: '#0d0f12',
+                        mcCard: 'rgba(20, 24, 33, 0.65)',
+                        cyanGlow: '#22d3ee',
+                        purpleGlow: '#c084fc',
+                        yellowGlow: '#facc15',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            background-color: #0d0f12;
+            background-image: 
+                radial-gradient(at 10% 20%, rgba(34, 211, 238, 0.05) 0px, transparent 50%),
+                radial-gradient(at 90% 80%, rgba(192, 132, 252, 0.05) 0px, transparent 50%);
+            background-attachment: fixed;
+        }
+        
+        .glass-card {
+            background: rgba(20, 24, 33, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-4px);
+        }
+
+        /* Custom Animations */
+        @keyframes rainbowGlow {
+            0% { border-color: #ef4444; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+            20% { border-color: #3b82f6; box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); }
+            40% { border-color: #10b981; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
+            60% { border-color: #eab308; box-shadow: 0 0 15px rgba(234, 179, 84, 0.4); }
+            80% { border-color: #ec4899; box-shadow: 0 0 15px rgba(236, 72, 153, 0.4); }
+            100% { border-color: #ef4444; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+        }
+        .rank-rainbow { animation: rainbowGlow 6s infinite linear; }
+        
+        @keyframes godGlow {
+            0% { background-position: 0% 50%; box-shadow: 0 0 25px rgba(245, 158, 11, 0.6); }
+            50% { background-position: 100% 50%; box-shadow: 0 0 35px rgba(236, 72, 153, 0.6); }
+            100% { background-position: 0% 50%; box-shadow: 0 0 25px rgba(245, 158, 11, 0.6); }
+        }
+        .rank-god {
+            background: linear-gradient(-45deg, #ff007f, #7f00ff, #00f0ff, #ffaa00);
+            background-size: 400% 400%;
+            animation: godGlow 5s infinite ease-in-out;
+            border: none !important;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0d0f12; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+    </style>
+</head>
+<body class="text-gray-100 font-sans min-h-screen antialiased selection:bg-cyan-500 selection:text-black">
+
+    <div id="toastContainer" class="fixed top-5 left-5 z-50 flex flex-col gap-3"></div>
+
+    <div id="appLoader" class="fixed inset-0 z-50 bg-mcDark flex flex-col items-center justify-center gap-4">
+        <div class="w-12 h-12 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+        <p class="text-sm text-cyan-400 font-bold tracking-widest font-minecraft">מתחבר לבסיס הנתונים בענן...</p>
+    </div>
+
+    <nav class="glass-card sticky top-0 z-40 border-b border-white/5 px-6 py-4 flex justify-between items-center backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <span class="font-minecraft text-xl font-extrabold tracking-wider bg-gradient-to-r from-cyan-400 via-yellow-300 to-purple-400 bg-clip-text text-transparent">SummerLag Survival</span>
+        </div>
+        <div class="flex items-center gap-4" id="navAuthSection"></div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
+        
+        <section class="glass-card rounded-3xl p-8 border border-white/10 relative overflow-hidden shadow-2xl text-center sm:text-right flex flex-col sm:flex-row justify-between items-center gap-6">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 blur-[100px] rounded-full pointer-events-none"></div>
+            <div class="space-y-3">
+                <span class="bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-3 py-1 rounded-full text-xs font-bold tracking-wide font-minecraft uppercase">🔥 השרת באוויר</span>
+                <h1 class="font-minecraft text-3xl sm:text-4xl font-black text-white tracking-wide">ברוכים הבאים ל-SummerLag!</h1>
+                <p class="text-base text-gray-400 max-w-2xl leading-relaxed">
+                    שחקנים יכולים להגיש בקשה לדרגה באמצעות צילום מסך כהוכחה. האדמינים יבדקו את הבקשה ויאשרו או ידחו אותה. <span class="text-cyan-400 font-bold">לא ניתן לדלג על דרגות!</span>
+                </p>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <div onclick="copyServerIP()" class="bg-black/50 border border-white/10 hover:border-cyan-400/50 rounded-2xl px-5 py-3 flex items-center justify-between gap-4 cursor-pointer group transition-all">
+                    <div>
+                        <div class="text-[10px] text-gray-500 font-bold uppercase tracking-wider text-right">כתובת השרת (IP)</div>
+                        <div id="serverIPText" class="text-sm font-minecraft font-bold text-white group-hover:text-cyan-300 transition-colors">ilay1213.aternos.me</div>
+                    </div>
+                    <i class="fa-solid fa-copy text-gray-500 group-hover:text-cyan-400 transition-colors text-lg"></i>
+                </div>
+                <a href="https://discord.gg/mPfCdtWv" target="_blank" class="bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold rounded-2xl px-6 py-3 flex items-center justify-center gap-3 shadow-lg shadow-blue-500/10 transition-all transform hover:-translate-y-0.5">
+                    <i class="fa-brands fa-discord text-xl"></i>
+                    <div class="text-right">
+                        <div class="text-[10px] opacity-75 font-bold uppercase tracking-wider">הצטרפו לקהילה</div>
+                        <div class="text-sm font-bold">שרת הדיסקורד שלנו</div>
+                    </div>
+                </a>
+            </div>
+        </section>
+
+        <section id="announcementsSection" class="hidden glass-card rounded-2xl p-6 border border-cyan-500/20 bg-cyan-950/5 shadow-lg space-y-3">
+            <h3 class="text-lg font-minecraft font-black text-cyan-400 flex items-center gap-2">
+                <i class="fa-solid fa-bullhorn animate-pulse"></i> עדכונים והודעות מהנהלת השרת
+            </h3>
+            <div id="announcementsList" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                </div>
+        </section>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <section class="glass-card rounded-2xl p-6 border border-white/10 lg:col-span-1 flex flex-col h-fit">
+                <h2 class="text-xl font-minecraft font-black mb-1 flex items-center gap-2 text-yellow-400">
+                    <i class="fa-solid fa-crown animate-bounce"></i> טבלת המובילים
+                </h2>
+                <p class="text-xs text-gray-500 mb-4">השחקנים בעלי הדרגה הגבוהה ביותר בשרת</p>
+                <div id="leaderboardList" class="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+                    </div>
+            </section>
+
+            <div class="lg:col-span-2">
+                <div id="authSection" class="hidden max-w-md mx-auto glass-card rounded-2xl p-8 border border-white/10 shadow-xl overflow-visible">
+                    <div class="flex border-b border-white/10 mb-6">
+                        <button onclick="switchAuthTab('login')" id="tabLogin" class="w-1/2 pb-3 font-bold border-b-2 border-cyan-400 text-cyan-400">כניסה למערכת</button>
+                        <button onclick="switchAuthTab('register')" id="tabRegister" class="w-1/2 pb-3 font-bold border-b-2 border-transparent text-gray-400">רישום שחקן חדש</button>
+                    </div>
+                    
+                    <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-5">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">שם משתמש במיינקראפט</label>
+                            <input type="text" id="loginUser" required placeholder="הזן שם שחקן מדויק..." class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-400 transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">סיסמה לחשבון</label>
+                            <input type="password" id="loginPassword" required placeholder="הזן את הסיסמה שלך..." class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-cyan-400 transition-colors">
+                        </div>
+                        <button type="submit" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-cyan-500/20 whitespace-nowrap block">התחבר לחשבון 🚀</button>
+                    </form>
+
+                    <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-5 hidden">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">שם משתמש במיינקראפט לקשירה</label>
+                            <input type="text" id="regUser" required placeholder="הזן את ה-Username שלך בשרת..." class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-400 transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">בחר סיסמה מאובטחת</label>
+                            <input type="password" id="regPassword" required placeholder="לפחות 4 תווים..." class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-400 transition-colors">
+                        </div>
+                        <div class="pt-2">
+                            <button type="submit" class="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-400 hover:to-pink-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2 text-base">
+                                <span>צור פרופיל במערכת הדרגות</span>
+                                <span>✨</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="playerDashboard" class="hidden space-y-8">
+                    <div class="glass-card rounded-2xl p-6 border border-white/10 flex flex-col md:flex-row justify-between items-center gap-6">
+                        <div class="flex items-center gap-4">
+                            <div class="w-16 h-16 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
+                                <i class="fa-solid fa-user-shield text-white"></i>
+                            </div>
+                            <div>
+                                <div class="text-sm text-gray-400">שלום, שחקן סורבייבל!</div>
+                                <div class="text-2xl font-black text-white flex items-center gap-2" id="dashUsername"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="w-full md:w-1/3 space-y-2">
+                            <div class="flex justify-between text-xs font-bold text-gray-400">
+                                <span>התקדמות הדרגות שלך</span>
+                                <span id="dashProgressPercent">0%</span>
+                            </div>
+                            <div class="w-full bg-black/40 rounded-full h-3 border border-white/5 overflow-hidden">
+                                <div id="dashProgressBar" class="bg-gradient-to-r from-cyan-400 to-purple-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                            <div class="text-xs text-left text-gray-500" id="dashRankCount">0 מתוך 16</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="glass-card rounded-2xl p-6 border border-white/10">
+                            <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-cyan-400">
+                                <i class="fa-solid fa-paper-plane"></i> הגשת בקשת דרגה
+                            </h3>
+                            <form onsubmit="handleApplicationSubmit(event)" class="space-y-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-400 mb-1">שם משתמש (אוטומטי)</label>
+                                    <input type="text" id="formUsername" disabled class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-gray-400 cursor-not-allowed">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-300 mb-1">הדרגה המבוקשת (השלב הבא שלך)</label>
+                                    <select id="formRankSelect" required class="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-cyan-400">
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-300 mb-1">צילום מסך כהוכחה (Screenshot)</label>
+                                    <div class="relative border-2 border-dashed border-white/10 hover:border-cyan-400/50 rounded-xl p-4 transition-colors text-center cursor-pointer group">
+                                        <input type="file" id="formScreenshot" accept="image/*" required onchange="previewImage(event)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                                        <div id="uploadPlaceholder" class="space-y-1">
+                                            <i class="fa-solid fa-cloud-arrow-up text-xl text-gray-400 group-hover:text-cyan-400 transition-colors"></i>
+                                            <p class="text-xs text-gray-300">לחץ להעלאת קובץ תמונה</p>
+                                        </div>
+                                        <img id="screenshotPreview" class="hidden max-h-32 mx-auto rounded-lg shadow-md border border-white/10">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-300 mb-1">הערות נוספות</label>
+                                    <textarea id="formNotes" rows="2" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-cyan-400 text-sm"></textarea>
+                                </div>
+                                <button type="submit" id="submitAppBtn" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-black font-black py-3 rounded-xl transition-all shadow-lg">
+                                    🚀 שלח בקשה לאישור
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="glass-card rounded-2xl p-6 border border-white/10 flex flex-col">
+                            <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-purple-400">
+                                <i class="fa-solid fa-clock-rotate-left"></i> היסטוריית סטטוסים
+                            </h3>
+                            <div class="overflow-y-auto flex-1 max-h-[340px] pr-2 space-y-3" id="playerAppList"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="adminPanel" class="hidden glass-card rounded-2xl p-6 border border-red-500/20 bg-red-950/5 shadow-2xl space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-white/10 pb-4 gap-4">
+                <div>
+                    <h2 class="text-2xl font-black text-red-400 flex items-center gap-2">
+                        <i class="fa-solid fa-toolbox"></i> פאנל ניהול אדמין מאובטח
+                    </h2>
+                    <p class="text-xs text-gray-400">ניהול, סינון, ואישור דרגות לשחקני השרת בזמן אמת</p>
+                </div>
+                <div class="flex flex-wrap gap-2 w-full md:w-auto">
+                    <input type="text" id="adminSearch" oninput="renderAdminPanel()" placeholder="חפש שחקן..." class="bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-red-400 w-full md:w-44">
+                    <select id="adminFilterStatus" onchange="renderAdminPanel()" class="bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-red-400">
+                        <option value="All">כל הסטטוסים</option>
+                        <option value="Pending">🟡 ממתין לאישור</option>
+                        <option value="Approved">🟢 אושר</option>
+                        <option value="Rejected">🔴 נדחה</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                <div class="xl:col-span-2 space-y-4 max-h-[600px] overflow-y-auto pr-2" id="adminAppsQueue"></div>
+                
+                <div class="xl:col-span-1 flex flex-col gap-6">
+                    <div class="glass-card border border-white/5 bg-black/20 rounded-xl p-4 space-y-4 max-h-[300px] overflow-y-auto">
+                        <h4 class="text-sm font-bold text-gray-300 border-b border-white/5 pb-2">רשימת שחקנים ועדכון ידני</h4>
+                        <div id="adminUsersList" class="space-y-2"></div>
+                    </div>
+
+                    <div class="glass-card border border-white/5 bg-black/20 rounded-xl p-4 space-y-3">
+                        <h4 class="text-sm font-bold text-cyan-400 border-b border-white/5 pb-2">📢 לוח מודעות ואיוונטים</h4>
+                        <form onsubmit="handleCreateAnnouncement(event)" class="space-y-2">
+                            <input type="text" id="newAnnText" required placeholder="הקלד מודעה: ביום שישי בשעה 18:00..." class="w-full bg-black/60 border border-white/10 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none focus:border-cyan-400">
+                            <button type="submit" class="w-full bg-cyan-500 hover:bg-cyan-400 text-black font-bold py-1.5 rounded-lg text-xs transition-all">פרסם מודעה לכולם 🚀</button>
+                        </form>
+                        <div id="adminAnnouncementsQueue" class="space-y-1.5 max-h-[140px] overflow-y-auto pr-1 pt-2 border-t border-white/5">
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section>
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+                <h2 class="text-2xl font-minecraft font-extrabold text-white flex items-center gap-3">
+                    <i class="fa-solid fa-layer-group text-cyan-400"></i> מפת הדרגות והתקדמות המשחק
+                </h2>
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <input type="text" id="rankSearchInput" oninput="renderRankCatalog()" placeholder="חפש דרגה..." class="w-full sm:w-64 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-cyan-400">
+                </div>
+            </div>
+            <div id="ranksGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+        </section>
+
+    </main>
+
+    <footer class="mt-24 border-t border-white/5 py-8 text-center text-sm text-gray-500">
+        <p>© 2026 SummerLag Survival. כל הזכויות שמורות למנהלי השרת.</p>
+    </footer>
+
+    <script>
+        // --- 1. FIREBASE CLOUD CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDsuwgjYlFKGxcGnoRo3grXtR4g8DVKiwk",
+            authDomain: "summerlag-ranks.firebaseapp.com",
+            databaseURL: "https://summerlag-ranks-default-rtdb.firebaseio.com",
+            projectId: "summerlag-ranks",
+            storageBucket: "summerlag-ranks.firebasestorage.app",
+            messagingSenderId: "381434699530",
+            appId: "1:381434699530:web:fbb601522aabef2a2044f3"
+        };
+
+        // אתחול המערכת של גוגל
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // משתני זיכרון גלובליים
+        let cloud_users = {};
+        let cloud_applications = {};
+        let cloud_history = {};
+        let cloud_announcements = {}; // משתנה מודעות גלובלי חדש
+        let currentUser = JSON.parse(sessionStorage.getItem('session_user')) || null;
+
+        // --- 2. RANKS STATIC DATA ---
+        const RANKS_DATA = [
+            { id: "Affiliate", name: "Affiliate", icon: "🔰", req: "הצטרף לשרת", difficulty: "קל מאוד", style: "border-gray-500/30 shadow-[0_0_15px_rgba(107,114,128,0.15)] text-gray-400" },
+            { id: "General", name: "General", icon: "🪖", req: "בנה בית בסיסי", difficulty: "קל", style: "border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)] text-emerald-400" },
+            { id: "Loyal", name: "Loyal", icon: "🎖", req: "בנה חווה ציבורית שכל השחקנים יכולים להשתמש בה", difficulty: "קל+", style: "border-sky-400/30 shadow-[0_0_15px_rgba(56,189,248,0.2)] text-sky-400" },
+            { id: "Official", name: "Official", icon: "📜", req: "השג סט יהלום מלא", difficulty: "בינוני", style: "border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.2)] text-blue-400" },
+            { id: "Prodigy", name: "Prodigy", icon: "⭐", req: "השג Mace", difficulty: "בינוני", style: "border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)] text-purple-400" },
+            { id: "Immortal", name: "Immortal", icon: "⚔", req: "השג Elytra", difficulty: "בינוני+", style: "border-pink-500/30 shadow-[0_0_15px_rgba(236,72,153,0.2)] text-pink-400" },
+            { id: "Formidable", name: "Formidable", icon: "💎", req: "הבס את הדרקון", difficulty: "קשה", style: "border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.2)] text-red-500 font-bold" },
+            { id: "Hunter", name: "Hunter", icon: "🏹", req: "הרוג 500 מובים עוינים", difficulty: "קשה", style: "border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.2)] text-orange-400" },
+            { id: "Slayer", name: "Slayer", icon: "🔥", req: "הבס את ה-Wither", difficulty: "קשה+", style: "border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.25)] text-amber-500" },
+            { id: "Legendary", name: "Legendary", icon: "👑", req: "הפעל Beacon מלא (Level 4)", difficulty: "מומחה", style: "border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.4)] text-cyan-300 font-extrabold" },
+            { id: "Saint", name: "Saint", icon: "🌟", req: "בנה פרויקט גדול ומושקע שאושר על ידי אדמין", difficulty: "מומחה", style: "border-white shadow-[0_0_20px_rgba(255,255,255,0.4)] text-white font-extrabold" },
+            { id: "Champion", name: "Champion", icon: "🏆", req: "הבס את הדרקון 5 פעמים", difficulty: "מומחה+", style: "border-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.5)] text-yellow-300 font-extrabold" },
+            { id: "Mythic", name: "Mythic", icon: "⚡", req: "השג 100 Advancements", difficulty: "מטורף", style: "border-fuchsia-400 shadow-[0_0_20px_rgba(232,121,249,0.5)] text-fuchsia-300 font-extrabold" },
+            { id: "Titan", name: "Titan", icon: "🌈", req: "השלם את כל ה-Advancements של ה-End וה-Nether", difficulty: "אגדי", style: "rank-rainbow text-transparent bg-gradient-to-r from-red-400 via-green-400 to-blue-400 bg-clip-text font-black" },
+            { id: "Divine", name: "Divine", icon: "☀", req: "השג 130+ Advancements או 90% מכל ה-Advancements במשחק", difficulty: "אלוהי", style: "border-transparent bg-gradient-to-r from-blue-400 to-amber-400 bg-clip-border shadow-[0_0_25px_rgba(59,130,246,0.4)] text-amber-300 font-black" },
+            { id: "GOD", name: "GOD", icon: "🔱", req: "השלם כמעט את כל התוכן בשרת, אישור אדמין, הבס את הדרקון 100 פעמים וה-Wither 10 פעמים", difficulty: "אל השרת", style: "rank-god text-white font-black uppercase text-center" }
+        ];
+
+        // --- 3. REALTIME CLOUD LISTENERS ---
+        function startCloudSynchronization() {
+            let loadedTables = 0;
+            const checkLoader = () => {
+                loadedTables++;
+                if(loadedTables >= 4) { // הועלה ל-4 כדי לכלול את טבלת המודעות
+                    document.getElementById('appLoader').classList.add('hidden');
+                    initApp();
+                }
+            };
+
+            // האזנה למשתמשים בענן
+            database.ref('users').on('value', (snapshot) => {
+                cloud_users = snapshot.val() || {};
+                if (Object.keys(cloud_users).length === 0) {
+                    database.ref('users/admin_root').set({
+                        id: "admin_root",
+                        minecraft_username: "AdminSummer",
+                        password: "ilaytheking",
+                        current_rank: "GOD",
+                        role: "admin",
+                        created_at: new Date().toISOString()
+                    });
+                }
+                if (currentUser) {
+                    const updatedMe = Object.values(cloud_users).find(u => u.minecraft_username.toLowerCase() === currentUser.minecraft_username.toLowerCase());
+                    if (updatedMe) { currentUser = updatedMe; sessionStorage.setItem('session_user', JSON.stringify(currentUser)); }
+                }
+                if(loadedTables >= 4) { renderPlayerDashboard(); renderAdminPanel(); renderRankCatalog(); renderLeaderboard(); }
+                else { checkLoader(); }
+            });
+
+            // האזנה לבקשות דרגה
+            database.ref('applications').on('value', (snapshot) => {
+                cloud_applications = snapshot.val() || {};
+                if(loadedTables >= 4) { renderPlayerDashboard(); renderAdminPanel(); }
+                else { checkLoader(); }
+            });
+
+            // האזנה להיסטוריה
+            database.ref('history').on('value', (snapshot) => {
+                cloud_history = snapshot.val() || {};
+                if(loadedTables >= 4) { renderAdminPanel(); }
+                else { checkLoader(); }
+            });
+
+            // האזנה למודעות (חדש - סנכרון מודעות)
+            database.ref('announcements').on('value', (snapshot) => {
+                cloud_announcements = snapshot.val() || {};
+                renderAnnouncements();
+                if(loadedTables >= 4) { renderAdminPanel(); }
+                else { checkLoader(); }
+            });
+        }
+
+        // --- 4. UX COOPERATION FUNCTIONS ---
+        function copyServerIP() {
+            const ipText = document.getElementById('serverIPText').innerText;
+            navigator.clipboard.writeText(ipText).then(() => {
+                showToast("ה-IP הועתק בהצלחה! פתח מיינקראפט וכנס לשחק 🎮");
+            }).catch(() => { showToast("שגיאה בהעתקה ידנית", "error"); });
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `glass-card border px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 transform translate-x-[-20px] opacity-0 transition-all duration-300 text-sm font-bold ${
+                type === 'success' ? 'border-emerald-500/40 text-emerald-400 bg-emerald-950/20' : 'border-red-500/40 text-red-400 bg-red-950/20'
+            }`;
+            toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.classList.remove('translate-x-[-20px]', 'opacity-0'); }, 50);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-[-10px]');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // --- 5. LEADERBOARD GENERATOR (EXCLUDES ALL ADMINS COMPLETELY) ---
+        function renderLeaderboard() {
+            const container = document.getElementById('leaderboardList');
+            if(!container) return;
+            container.innerHTML = "";
+            let usersArr = Object.values(cloud_users).filter(u => 
+                u.minecraft_username.toLowerCase() !== 'adminsummer' && 
+                u.minecraft_username.toLowerCase() !== 'summeradmin' && 
+                u.role !== 'admin'
+            );
+            usersArr.sort((a, b) => {
+                const indexA = RANKS_DATA.findIndex(r => r.id === a.current_rank);
+                const indexB = RANKS_DATA.findIndex(r => r.id === b.current_rank);
+                return indexB - indexA;
+            });
+            if(usersArr.length === 0) {
+                container.innerHTML = `<div class="text-xs text-gray-500 text-center py-8">אין שחקנים רשומים בטבלה.</div>`;
+                return;
+            }
+            usersArr.forEach((u, i) => {
+                const rankObj = RANKS_DATA.find(r => r.id === u.current_rank) || RANKS_DATA[0];
+                let placementSymbol = `${i + 1}.`;
+                if(i === 0) placementSymbol = "🥇";
+                if(i === 1) placementSymbol = "🥈";
+                if(i === 2) placementSymbol = "🥉";
+                const div = document.createElement('div');
+                div.className = "flex items-center justify-between bg-black/40 border border-white/5 p-3 rounded-xl hover:bg-black/60 transition-colors gap-2";
+                div.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="font-minecraft font-black text-sm w-6 text-center">${placementSymbol}</span>
+                        <span class="font-bold text-gray-200 text-sm tracking-wide">${u.minecraft_username}</span>
+                    </div>
+                    <span class="text-[11px] font-minecraft font-bold bg-white/5 px-2.5 py-1 rounded-md border border-white/5 text-gray-300">${rankObj.icon} ${rankObj.name}</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // --- 6. ANNOUNCEMENTS RENDERING SYSTEM (חדש - הצגת מודעות במסך הבית) ---
+        function renderAnnouncements() {
+            const section = document.getElementById('announcementsSection');
+            const container = document.getElementById('announcementsList');
+            if(!container || !section) return;
+
+            const list = Object.values(cloud_announcements).reverse();
+            if(list.length === 0) { section.classList.add('hidden'); return; }
+
+            section.classList.remove('hidden');
+            container.innerHTML = "";
+            list.forEach(item => {
+                const div = document.createElement('div');
+                div.className = "bg-white/5 border-r-4 border-cyan-400 p-4 rounded-l-xl text-sm flex justify-between items-center gap-4 shadow-sm";
+                div.innerHTML = `
+                    <div class="space-y-1">
+                        <p class="text-gray-100 font-semibold text-sm leading-relaxed">${item.text}</p>
+                        <p class="text-[10px] text-gray-500 font-mono">${item.created_at}</p>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function handleCreateAnnouncement(e) {
+            e.preventDefault();
+            const input = document.getElementById('newAnnText');
+            const textIn = input.value.trim();
+            if(!textIn) return;
+
+            const annId = "ann_" + Date.now();
+            database.ref('announcements/' + annId).set({
+                id: annId,
+                text: textIn,
+                created_at: new Date().toLocaleString('he-IL', {hour: '2-digit', minute:'2-digit', day: '2-digit', month: '2-digit'})
+            }, (err) => {
+                if(!err) { showToast("ההודעה הועלתה בהצלחה לענן ומפורסמת כעת!"); input.value = ""; }
+                else { showToast("שגיאה בהעלאה לענן", "error"); }
+            });
+        }
+
+        function deleteAnnouncement(annId) {
+            if(!confirm("האם למחוק הודעה זו לחלוטין ממסך הבית?")) return;
+            database.ref('announcements/' + annId).remove(() => { showToast("ההודעה הוסרה בהצלחה."); });
+        }
+
+        // --- 7. AUTH LOGIC WITH PASSWORD SYSTEM ---
+        function switchAuthTab(tab) {
+            const loginF = document.getElementById('loginForm');
+            const regF = document.getElementById('registerForm');
+            const tLog = document.getElementById('tabLogin');
+            const tReg = document.getElementById('tabRegister');
+            if(tab === 'login') {
+                loginF.classList.remove('hidden'); regF.classList.add('hidden');
+                tLog.className = "w-1/2 pb-3 font-bold border-b-2 border-cyan-400 text-cyan-400";
+                tReg.className = "w-1/2 pb-3 font-bold border-b-2 border-transparent text-gray-400";
+            } else {
+                loginF.classList.add('hidden'); regF.className = "w-1/2 pb-3 font-bold border-b-2 border-purple-400 text-purple-400";
+                tLog.className = "w-1/2 pb-3 font-bold border-b-2 border-transparent text-gray-400";
+                regF.classList.remove('hidden');
+            }
+        }
+
+        function handleRegister(e) {
+            e.preventDefault();
+            const username = document.getElementById('regUser').value.trim();
+            const password = document.getElementById('regPassword').value.trim();
+            if(!username) return;
+            if(password.length < 4) { return showToast("הסיסמה קצרה מדי! לפחות 4 תווים.", "error"); }
+            const exists = Object.values(cloud_users).some(u => u.minecraft_username.toLowerCase() === username.toLowerCase());
+            if (exists) { return showToast("שם השחקן כבר רשום במערכת הענן!", "error"); }
+
+            const customId = "user_" + Date.now();
+            const newUser = {
+                id: customId,
+                minecraft_username: username,
+                password: password, 
+                current_rank: "Affiliate",
+                role: (username.toLowerCase() === 'adminsummer' || username.toLowerCase().includes('admin')) ? "admin" : "user",
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+
+            database.ref('users/' + customId).set(newUser, (err) => {
+                if(err) { showToast("שגיאת ענן ברישום", "error"); }
+                else {
+                    showToast(`השחקן ${username} נרשם בהצלחה עם סיסמה! ניתן להתחבר.`);
+                    switchAuthTab('login');
+                    document.getElementById('loginUser').value = username;
+                    document.getElementById('registerForm').reset();
+                }
+            });
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const userIn = document.getElementById('loginUser').value.trim();
+            const passIn = document.getElementById('loginPassword').value.trim();
+            const user = Object.values(cloud_users).find(u => u.minecraft_username.toLowerCase() === userIn.toLowerCase());
+            if (!user) { return showToast("שם שחקן לא נמצא. אנא הירשם תחילה!", "error"); }
+            if (user.password !== passIn) { return showToast("סיסמה שגויה! נסה שנית.", "error"); }
+
+            currentUser = user;
+            sessionStorage.setItem('session_user', JSON.stringify(currentUser));
+            showToast(`שלום ${user.minecraft_username}, התחברת בהצלחה למערכת.`);
+            document.getElementById('loginForm').reset();
+            initApp();
+        }
+
+        function deleteUser(userId, username) {
+            if(!confirm(`האם אתה בטוח לחלוטין שברצונך למחוק את השחקן "${username}" ואת כל הפרופיל שלו מהענן?`)) return;
+            database.ref('users/' + userId).remove((err) => {
+                if(err) { showToast("שגיאה במחיקה מהענן", "error"); }
+                else { showToast(`השחקן ${username} נמחק בהצלחה מהמערכת.`); }
+            });
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            sessionStorage.removeItem('session_user');
+            showToast("התנתקת מהמערכת.");
+            initApp();
+        }
+
+        // --- 8. APPLICATION HANDLING ---
+        let currentUploadedBase64 = "";
+
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imgElement = new Image();
+                    imgElement.src = e.target.result;
+                    imgElement.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 800; 
+                        const scaleSize = MAX_WIDTH / imgElement.width;
+                        canvas.width = MAX_WIDTH;
+                        canvas.height = imgElement.height * scaleSize;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(imgElement, 0, 0, canvas.width, canvas.height);
+                        currentUploadedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                        document.getElementById('uploadPlaceholder').classList.add('hidden');
+                        const img = document.getElementById('screenshotPreview');
+                        img.src = currentUploadedBase64;
+                        img.classList.remove('hidden');
+                    }
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function handleApplicationSubmit(e) {
+            e.preventDefault();
+            if(!currentUser) return showToast("עליך להתחבר תחילה!", "error");
+            if(!currentUploadedBase64) return showToast("חובה להעלות צילום מסך כהוכחה!", "error");
+
+            const reqRank = document.getElementById('formRankSelect').value;
+            if(!reqRank) return showToast("הגעת לדרגת המקסימום המותרת!", "error");
+
+            const currentRankIndex = RANKS_DATA.findIndex(r => r.id === currentUser.current_rank);
+            const reqRankIndex = RANKS_DATA.findIndex(r => r.id === reqRank);
+            if (reqRankIndex !== currentRankIndex + 1) { return showToast("שגיאה: אינך יכול לדלג על דרגות!", "error"); }
+
+            const appId = "app_" + Date.now();
+            const newApp = {
+                id: appId,
+                user_id: currentUser.id,
+                minecraft_username: currentUser.minecraft_username,
+                requested_rank: reqRank,
+                screenshot_url: currentUploadedBase64,
+                notes: document.getElementById('formNotes').value,
+                status: "Pending",
+                admin_note: "",
+                created_at: new Date().toLocaleString('he-IL')
+            };
+
+            database.ref('applications/' + appId).set(newApp, (err) => {
+                if (err) { showToast("שגיאה בשליחה לענן", "error"); }
+                else {
+                    showToast("הבקשה עלתה לענן וממתינה לאדמין! 🚀", "success");
+                    document.getElementById('formNotes').value = "";
+                    document.getElementById('formScreenshot').value = "";
+                    document.getElementById('screenshotPreview').classList.add('hidden');
+                    document.getElementById('uploadPlaceholder').classList.remove('hidden');
+                    currentUploadedBase64 = "";
+                }
+            });
+        }
+
+        // --- 9. INTERFACE RENDERERS ---
+        function initApp() {
+            renderNav();
+            renderRankCatalog();
+            renderLeaderboard();
+            renderAnnouncements();
+            
+            if (currentUser) {
+                document.getElementById('authSection').classList.add('hidden');
+                document.getElementById('playerDashboard').classList.remove('hidden');
+                renderPlayerDashboard();
+                if (currentUser.role === 'admin') { document.getElementById('adminPanel').classList.remove('hidden'); renderAdminPanel(); }
+                else { document.getElementById('adminPanel').classList.add('hidden'); }
+            } else {
+                document.getElementById('authSection').classList.remove('hidden');
+                document.getElementById('playerDashboard').classList.add('hidden');
+                document.getElementById('adminPanel').classList.add('hidden');
+            }
+        }
+
+        function renderNav() {
+            const wrapper = document.getElementById('navAuthSection');
+            if (currentUser) {
+                wrapper.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs bg-white/10 px-2.5 py-1 rounded-md text-gray-300 font-mono">${currentUser.role === 'admin' ? '🛡️ Admin' : '🎮 Player'}</span>
+                        <span class="font-bold text-white text-sm">${currentUser.minecraft_username}</span>
+                    </div>
+                    <button onclick="handleLogout()" class="bg-white/5 border border-white/10 hover:bg-red-500/20 text-gray-300 hover:text-red-400 text-xs px-4 py-2 rounded-xl transition-all">יציאה</button>
+                `;
+            } else {
+                wrapper.innerHTML = `
+                    <button onclick="document.getElementById('authSection').scrollIntoView({behavior: 'smooth'})" class="bg-gradient-to-r from-cyan-500 to-purple-500 text-black font-bold text-xs px-5 py-2.5 rounded-xl hover:opacity-90 transition-all shadow-md">התחברות לשחקנים</button>
+                `;
+            }
+        }
+
+        function renderRankCatalog() {
+            const grid = document.getElementById('ranksGrid');
+            const search = document.getElementById('rankSearchInput').value.toLowerCase();
+            grid.innerHTML = "";
+            let currentRankIndex = -1;
+            if (currentUser) { currentRankIndex = RANKS_DATA.findIndex(r => r.id === currentUser.current_rank); }
+
+            RANKS_DATA.forEach((rank, index) => {
+                if(rank.name.toLowerCase().includes(search) || rank.req.toLowerCase().includes(search)) {
+                    let buttonHtml = "";
+                    if (!currentUser) { buttonHtml = `<button onclick="applyForRankDirect('${rank.id}')" class="w-full text-center py-2 rounded-lg text-xs font-bold transition-all bg-white/5 text-white hover:bg-white/10">התחבר כדי להגיש מועמדות</button>`; }
+                    else if (index <= currentRankIndex) { buttonHtml = `<div class="w-full text-center py-2 rounded-lg text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">✓ דרגה זו פתוחה בפרופיל</div>`; }
+                    else if (index === currentRankIndex + 1) { buttonHtml = `<button onclick="applyForRankDirect('${rank.id}')" class="w-full text-center py-2 rounded-lg text-xs font-bold transition-all bg-gradient-to-r from-cyan-500 to-blue-600 text-black hover:opacity-90 shadow-lg shadow-cyan-500/20 animate-pulse">הגש מועמדות לדרגה הבאה 🚀</button>`; }
+                    else { buttonHtml = `<div class="w-full text-center py-2 rounded-lg text-xs font-bold bg-black/40 text-gray-600 border border-white/5 cursor-not-allowed">🔒 נעול (עליך להשלים שלבים קודמים)</div>`; }
+
+                    const card = document.createElement('div');
+                    card.className = `glass-card rounded-2xl p-5 flex flex-col justify-between ${rank.style} ${index > currentRankIndex + 1 && currentUser ? 'opacity-40 grayscale-[40%]' : ''}`;
+                    card.innerHTML = `
+                        <div>
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="text-3xl">${rank.icon}</span>
+                                <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-black/40 text-gray-300">${rank.difficulty}</span>
+                            </div>
+                            <h3 class="font-minecraft text-xl font-extrabold mb-2">${rank.name}</h3>
+                            <p class="text-xs text-gray-300 leading-relaxed min-h-[40px]">${rank.req}</p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-white/5">${buttonHtml}</div>
+                    `;
+                    grid.appendChild(card);
+                }
+            });
+        }
+
+        function applyForRankDirect(rankId) {
+            if(!currentUser) { showToast("אנא הזן שם משתמש כדי להתחבר!", "error"); document.getElementById('authSection').scrollIntoView({behavior: 'smooth'}); return; }
+            const currentRankIndex = RANKS_DATA.findIndex(r => r.id === currentUser.current_rank);
+            const targetRankIndex = RANKS_DATA.findIndex(r => r.id === rankId);
+            if (targetRankIndex !== currentRankIndex + 1) { showToast("المערכת מחייבת התקדמות שלב אחר שלב!", "error"); return; }
+            document.getElementById('formRankSelect').value = rankId;
+            document.getElementById('playerDashboard').scrollIntoView({behavior: 'smooth'});
+            showToast(`נבחרה הדרגה הבאה: ${rankId}`);
+        }
+
+        function renderPlayerDashboard() {
+            if(!currentUser) return;
+            document.getElementById('dashUsername').innerText = currentUser.minecraft_username;
+            document.getElementById('formUsername').value = currentUser.minecraft_username;
+            const currentRankIndex = RANKS_DATA.findIndex(r => r.id === currentUser.current_rank);
+            const totalRanks = RANKS_DATA.length;
+            const progressPercent = Math.round(((currentRankIndex + 1) / totalRanks) * 100);
+            document.getElementById('dashProgressPercent').innerText = `${progressPercent}%`;
+            document.getElementById('dashProgressBar').style.width = `${progressPercent}%`;
+            document.getElementById('dashRankCount').innerText = `דרגה נוכחית: ${currentUser.current_rank} (${currentRankIndex + 1} מתוך ${totalRanks})`;
+
+            const select = document.getElementById('formRankSelect');
+            const submitBtn = document.getElementById('submitAppBtn');
+            select.innerHTML = "";
+            const nextRankIndex = currentRankIndex + 1;
+            if (nextRankIndex < RANKS_DATA.length) {
+                const nextRank = RANKS_DATA[nextRankIndex];
+                select.innerHTML = `<option value="${nextRank.id}" class="bg-mcDark">${nextRank.icon} ${nextRank.name} (השלב הבא שלך)</option>`;
+                select.disabled = false; submitBtn.disabled = false;
+                submitBtn.className = "w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-black font-black py-3 rounded-xl transition-all shadow-lg cursor-pointer";
+            } else {
+                select.innerHTML = `<option value="">👑 הגעת לדרגה המקסימלית!</option>`;
+                select.disabled = true; submitBtn.disabled = true;
+                submitBtn.className = "w-full bg-gray-800 text-gray-500 font-black py-3 rounded-xl transition-all border border-white/5 cursor-not-allowed";
+            }
+
+            const listWrapper = document.getElementById('playerAppList');
+            listWrapper.innerHTML = "";
+            const apps = Object.values(cloud_applications).filter(a => a.user_id === currentUser.id).reverse();
+            if (apps.length === 0) { listWrapper.innerHTML = `<div class="text-sm text-gray-500 text-center py-8">טרם הוגשו בקשות לפרופיל זה.</div>`; return; }
+
+            apps.forEach(app => {
+                let statusBadge = "";
+                if(app.status === 'Pending') statusBadge = `<span class="bg-yellow-500/20 text-yellow-400 px-2.5 py-1 rounded-lg text-xs font-bold">🟡 ממתין</span>`;
+                if(app.status === 'Approved') statusBadge = `<span class="bg-emerald-500/20 text-emerald-400 px-2.5 py-1 rounded-lg text-xs font-bold">🟢 אושר</span>`;
+                if(app.status === 'Rejected') statusBadge = `<span class="bg-red-500/20 text-red-400 px-2.5 py-1 rounded-lg text-xs font-bold">🔴 נדחה</span>`;
+                const div = document.createElement('div');
+                div.className = "bg-white/5 border border-white/5 rounded-xl p-4 space-y-3";
+                div.innerHTML = `
+                    <div class="flex justify-between items-center flex-wrap gap-2">
+                        <div class="text-sm font-bold text-white">בקשה לדרגת: <span class="text-cyan-400 font-minecraft">${app.requested_rank}</span></div>
+                        ${statusBadge}
+                    </div>
+                    <div class="flex gap-4 items-center">
+                        <img src="${app.screenshot_url}" class="w-16 h-12 object-cover rounded-md border border-white/10 cursor-pointer hover:scale-105 transition-transform" onclick="window.open('${app.screenshot_url}')">
+                        <div class="text-xs text-gray-300 italic">הערה: "${app.notes || 'אין'}"</div>
+                    </div>
+                    ${app.admin_note ? `<div class="text-xs bg-black/40 p-2.5 rounded-lg border border-white/5 text-gray-300"><strong>תגובת אדמין:</strong> ${app.admin_note}</div>` : ""}
+                `;
+                listWrapper.appendChild(div);
+            });
+        }
+
+        function renderAdminPanel() {
+            if(!currentUser || currentUser.role !== 'admin') return;
+            const searchQuery = document.getElementById('adminSearch').value.toLowerCase();
+            const statusFilter = document.getElementById('adminFilterStatus').value;
+            const appsQueue = document.getElementById('adminAppsQueue');
+            appsQueue.innerHTML = "";
+            let apps = Object.values(cloud_applications).reverse();
+
+            apps = apps.filter(a => {
+                const matchesSearch = a.minecraft_username.toLowerCase().includes(searchQuery) || a.requested_rank.toLowerCase().includes(searchQuery);
+                const matchesStatus = (statusFilter === 'All') || (a.status === statusFilter);
+                return matchesSearch && matchesStatus;
+            });
+
+            if(apps.length === 0) { appsQueue.innerHTML = `<div class="glass-card text-center text-sm text-gray-400 py-8 rounded-xl">אין בקשות ממתינות בסינון זה.</div>`; }
+            else {
+                apps.forEach(app => {
+                    const block = document.createElement('div');
+                    block.className = `glass-card p-5 rounded-xl border flex flex-col md:flex-row gap-6 justify-between ${app.status === 'Pending' ? 'border-yellow-500/20 bg-yellow-500/[0.01]' : app.status === 'Approved' ? 'border-emerald-500/20' : 'border-red-500/20'}`;
+                    block.innerHTML = `
+                        <div class="space-y-3 flex-1">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="bg-cyan-400 text-black font-minecraft text-xs px-2 py-0.5 rounded font-black">${app.minecraft_username}</span>
+                                <span class="text-sm font-bold text-white">מבקש דרגת: <span class="text-purple-400 font-minecraft">${app.requested_rank}</span></span>
+                                <span class="text-sm text-gray-500 mr-auto">${app.created_at}</span>
+                            </div>
+                            <div class="text-xs text-gray-400">הערות: <span class="text-gray-200">"${app.notes || 'אין'}"</span></div>
+                            <img src="${app.screenshot_url}" class="rounded-lg max-h-36 border border-white/10 shadow-md cursor-pointer" onclick="window.open('${app.screenshot_url}')">
+                        </div>
+                        ${app.status === 'Pending' ? `
+                            <div class="flex flex-col gap-2 justify-center w-full md:w-48 border-t md:border-t-0 md:border-r border-white/10 pt-4 md:pt-0 md:pr-4">
+                                <input type="text" id="adminNote_${app.id}" placeholder="סיבת אישור / דחייה..." class="w-full bg-black/60 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none">
+                                <div class="flex gap-2">
+                                    <button onclick="processApplication('${app.id}', 'Approved')" class="w-1/2 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-1.5 rounded-lg text-xs transition-all">✅ Approve</button>
+                                    <button onclick="processApplication('${app.id}', 'Rejected')" class="w-1/2 bg-red-500 hover:bg-red-400 text-white font-bold py-1.5 rounded-lg text-xs transition-all">❌ Reject</button>
+                                </div>
+                                <button onclick="deleteApplication('${app.id}')" class="text-left text-[10px] text-red-400/60 underline mt-1">מחק בקשה</button>
+                            </div>
+                        ` : `<div class="flex items-center justify-center md:w-24"><button onclick="deleteApplication('${app.id}')" class="text-xs text-gray-500 hover:text-red-400 border border-white/5 px-2 py-1 rounded"><i class="fa-solid fa-trash-can"></i> מחק</button></div>`}
+                    `;
+                    appsQueue.appendChild(block);
+                });
+            }
+
+            // רשימת משתמשים עם מחיקה
+            const usersList = document.getElementById('adminUsersList');
+            usersList.innerHTML = "";
+            Object.values(cloud_users).forEach(u => {
+                const isSelf = u.minecraft_username.toLowerCase() === 'adminsummer';
+                const row = document.createElement('div');
+                row.className = "flex items-center justify-between text-xs bg-black/40 p-2.5 rounded-lg border border-white/5 gap-2";
+                row.innerHTML = `
+                    <div class="font-bold text-white"><div>${u.minecraft_username}</div><div class="text-[10px] text-purple-400 font-minecraft font-normal">דרגה: ${u.current_rank}</div></div>
+                    <div class="flex items-center gap-2">
+                        <select onchange="manuallyChangeRank('${u.id}', this.value)" class="bg-mcDark border border-white/10 rounded px-1 py-0.5 text-[11px] text-gray-300 focus:outline-none">
+                            ${RANKS_DATA.map(r => `<option value="${r.id}" ${u.current_rank === r.id ? 'selected' : ''}>${r.name}</option>`).join('')}
+                        </select>
+                        ${!isSelf ? `<button onclick="deleteUser('${u.id}', '${u.minecraft_username}')" class="text-red-500 hover:text-red-400 px-1 py-0.5 transition-colors" title="מחק שחקן"><i class="fa-solid fa-user-minus"></i></button>` : ''}
+                    </div>
+                `;
+                usersList.appendChild(row);
+            });
+
+            // ניהול מודעות בתוך פאנל הניהול
+            const adminAnnQueue = document.getElementById('adminAnnouncementsQueue');
+            if(adminAnnQueue) {
+                adminAnnQueue.innerHTML = "";
+                const anns = Object.values(cloud_announcements).reverse();
+                if(anns.length === 0) { adminAnnQueue.innerHTML = `<div class="text-[10px] text-gray-500 text-center py-2">אין מודעות פעילות כרגע.</div>`; }
+                else {
+                    anns.forEach(a => {
+                        const row = document.createElement('div');
+                        row.className = "flex items-center justify-between text-[11px] bg-black/40 p-2 rounded border border-white/5 gap-2";
+                        row.innerHTML = `
+                            <span class="text-gray-300 truncate max-w-[190px]" title="${a.text}">${a.text}</span>
+                            <button onclick="deleteAnnouncement('${a.id}')" class="text-red-400 hover:text-red-300 px-1"><i class="fa-solid fa-trash-can"></i></button>
+                        `;
+                        adminAnnQueue.appendChild(row);
+                    });
+                }
+            }
+        }
+
+        function processApplication(appId, newStatus) {
+            const app = cloud_applications[appId]; if(!app) return;
+            const adminNote = document.getElementById(`adminNote_${appId}`).value.trim();
+            database.ref('applications/' + appId).update({ status: newStatus, admin_note: adminNote });
+
+            if(newStatus === 'Approved') {
+                const targetUser = cloud_users[app.user_id];
+                if(targetUser) {
+                    const oldRank = targetUser.current_rank; const newRank = app.requested_rank;
+                    database.ref('users/' + app.user_id).update({ current_rank: newRank, updated_at: new Date().toISOString() });
+                    const histId = "hist_" + Date.now();
+                    database.ref('history/' + histId).set({ id: histId, user_id: app.user_id, minecraft_username: app.minecraft_username, old_rank: oldRank, new_rank: newRank, approved_by: currentUser.minecraft_username, approved_at: new Date().toLocaleString('he-IL') });
+                }
+            }
+            showToast(`הבקשה עודכנה בהצלחה בענן.`);
+        }
+
+        function manuallyChangeRank(userId, newRank) {
+            const targetUser = cloud_users[userId]; if(!targetUser) return;
+            const oldRank = targetUser.current_rank;
+            database.ref('users/' + userId).update({ current_rank: newRank, updated_at: new Date().toISOString() });
+            const histId = "hist_" + Date.now();
+            database.ref('history/' + histId).set({ id: histId, user_id: userId, minecraft_username: targetUser.minecraft_username, old_rank: oldRank, new_rank: newRank, approved_by: currentUser.minecraft_username + " (ידני)", approved_at: new Date().toLocaleString('he-IL') });
+            showToast(`דרגת השחקן עודכנה ל-${newRank}`);
+        }
+
+        function deleteApplication(appId) {
+            if(!confirm("האם למחוק בקשה זו מהענן?")) return;
+            database.ref('applications/' + appId).remove(); showToast("הרשומה נמחקה מהענן.");
+        }
+
+        // הפעלת סנכרון הענן ברגע עליית הדף
+        startCloudSynchronization();
+    </script>
+</body>
+</html>
