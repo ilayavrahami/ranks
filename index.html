@@ -26,6 +26,7 @@
                         cyanGlow: '#22d3ee',
                         purpleGlow: '#c084fc',
                         yellowGlow: '#facc15',
+                        rainbowGlow: '#ef4444',
                     }
                 }
             }
@@ -85,6 +86,8 @@
 </head>
 <body class="text-gray-100 font-sans min-h-screen antialiased selection:bg-cyan-500 selection:text-black">
 
+    <canvas id="confettiCanvas" class="fixed inset-0 z-50 pointer-events-none hidden"></canvas>
+
     <div id="toastContainer" class="fixed top-5 left-5 z-50 flex flex-col gap-3"></div>
 
     <div id="appLoader" class="fixed inset-0 z-50 bg-mcDark flex flex-col items-center justify-center gap-4">
@@ -107,7 +110,13 @@
         <section class="glass-card rounded-3xl p-8 border border-white/10 relative overflow-hidden shadow-2xl text-center sm:text-right flex flex-col sm:flex-row justify-between items-center gap-6">
             <div class="absolute top-0 right-0 w-64 h-64 bg-cyan-500/5 blur-[100px] rounded-full pointer-events-none"></div>
             <div class="space-y-3">
-                <span id="serverStatusBadge" class="bg-gray-500/10 text-gray-400 border border-gray-500/20 px-3 py-1 rounded-full text-xs font-bold tracking-wide font-minecraft uppercase">⏳ בודק סטטוס שרת...</span>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span id="serverStatusBadge" class="bg-gray-500/10 text-gray-400 border border-gray-500/20 px-3 py-1 rounded-full text-xs font-bold tracking-wide font-minecraft uppercase">⏳ בודק סטטוס שרת...</span>
+                    <button onclick="checkMinecraftServerStatus()" id="serverStatusRefreshBtn" title="רענן סטטוס" class="bg-white/5 border border-white/10 hover:bg-white/10 text-gray-400 hover:text-cyan-400 text-xs w-7 h-7 rounded-full flex items-center justify-center transition-all">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                </div>
+                <p id="text_statusNote" class="text-[11px] text-gray-500 leading-relaxed"></p>
                 <h1 id="text_heroTitle" class="font-minecraft text-3xl sm:text-4xl font-black text-white tracking-wide">ברוכים הבאים ל-SummerLag!</h1>
                 <p id="text_heroDesc" class="text-base text-gray-400 max-w-2xl leading-relaxed">
                     שחקנים יכולים להגיש בקשה לדרגה באמצעות צילום מסך כהוכחה. האדמינים יבדקו את הבקשה ויאשרו או ידחו אותה. <span class="text-cyan-400 font-bold">לא ניתן לדלג על דרגות!</span>
@@ -224,6 +233,7 @@
                             <div>
                                 <div id="text_dashWelcome" class="text-sm text-gray-400">שלום, שחקן סורבייבל!</div>
                                 <div class="text-2xl font-black text-white flex items-center gap-2" id="dashUsername"></div>
+                                <div id="dashMemberSince" class="text-[11px] text-cyan-400/80 mt-1 font-mono flex items-center gap-1.5"></div>
                             </div>
                         </div>
                         
@@ -281,6 +291,39 @@
                             </h3>
                             <div class="overflow-y-auto flex-1 max-h-[340px] pr-2 space-y-3" id="playerAppList"></div>
                         </div>
+                    </div>
+
+                    <div class="glass-card rounded-2xl p-6 border border-white/10">
+                        <h3 id="text_timelineTitle" class="text-lg font-bold mb-5 flex items-center gap-2 text-cyan-400">
+                            <i class="fa-solid fa-timeline"></i> היסטוריית התקדמות הדרגות שלך
+                        </h3>
+                        <div id="dashTimelineList" class="relative border-white/10 rtl:border-r-2 ltr:border-l-2 rtl:pr-6 ltr:pl-6 rtl:mr-3 ltr:ml-3 space-y-6">
+                        </div>
+                    </div>
+
+                    <div class="glass-card rounded-2xl p-6 border border-white/10">
+                        <h3 id="text_accSettingsTitle" class="text-lg font-bold mb-4 flex items-center gap-2 text-yellow-400">
+                            <i class="fa-solid fa-gear"></i> הגדרות חשבון
+                        </h3>
+                        <form onsubmit="handleAccountUpdate(event)" class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label id="lblAccNewUser" class="block text-xs font-semibold text-gray-300 mb-1">שם משתמש חדש (אופציונלי)</label>
+                                    <input type="text" id="accNewUsername" placeholder="השאר ריק אם אין שינוי..." class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-yellow-400 transition-colors">
+                                </div>
+                                <div>
+                                    <label id="lblAccNewPass" class="block text-xs font-semibold text-gray-300 mb-1">סיסמה חדשה (אופציונלי)</label>
+                                    <input type="password" id="accNewPassword" placeholder="השאר ריק אם אין שינוי..." class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-yellow-400 transition-colors">
+                                </div>
+                            </div>
+                            <div>
+                                <label id="lblAccCurrentPass" class="block text-xs font-semibold text-gray-300 mb-1">סיסמה נוכחית (לאימות השינוי)</label>
+                                <input type="password" id="accCurrentPassword" required placeholder="הזן את הסיסמה הנוכחית שלך..." class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-yellow-400 transition-colors">
+                            </div>
+                            <button type="submit" id="btnAccUpdate" class="w-full bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-black font-black py-3 rounded-xl transition-all shadow-lg">
+                                💾 עדכן פרטי חשבון
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -367,6 +410,11 @@
         
         let currentLang = localStorage.getItem('summerlag_lang') || 'he';
 
+        // Confetti Global Engine State Variables
+        let confettiActive = false;
+        let confettiPieces = [];
+        let confettiAnimationId = null;
+
         // --- 2. TRANSLATION DICTIONARY SYSTEM ---
         const T = {
             he: {
@@ -400,6 +448,14 @@
                 lblFormNotes: "הערות נוספות",
                 btnFormSubmit: "שלח בקשה לאישור",
                 histTitle: "היסטוריית סטטוסים",
+                accSettingsTitle: "הגדרות חשבון",
+                lblAccNewUser: "שם משתמש חדש (אופציונלי)",
+                lblAccNewPass: "סיסמה חדשה (אופציונלי)",
+                lblAccCurrentPass: "סיסמה נוכחית (לאימות השינוי)",
+                btnAccUpdate: "💾 עדכן פרטי חשבון",
+                phAccNewUser: "השאר ריק אם אין שינוי...",
+                phAccNewPass: "השאר ריק אם אין שינוי...",
+                phAccCurrentPass: "הזן את הסיסמה הנוכחית שלך...",
                 adminPanelTitle: "פאנל ניהול אדמין מאובטח",
                 adminPanelSub: "ניהול, סינון, ואישור דרגות לשחקני השרת בזמן אמת",
                 adminUsersListTitle: "רשימת שחקנים ועדכון ידני",
@@ -417,7 +473,10 @@
                 allStatuses: "כל הסטטוסים",
                 statusPending: "🟡 ממתין לאישור",
                 statusApproved: "🟢 אושר",
-                statusRejected: "🔴 נדחה"
+                statusRejected: "🔴 נדחה",
+                memberSince: "חבר באתר מאז:",
+                timelineTitle: "היסטוריית התקדמות הדרגות שלך",
+                timelineEmpty: "אין עדיין שלבים מתועדים בציר הזמן."
             },
             en: {
                 appLoader: "Connecting to secure cloud database...",
@@ -450,6 +509,14 @@
                 lblFormNotes: "Additional Notes",
                 btnFormSubmit: "Submit Request for Review",
                 histTitle: "Status History",
+                accSettingsTitle: "Account Settings",
+                lblAccNewUser: "New Username (optional)",
+                lblAccNewPass: "New Password (optional)",
+                lblAccCurrentPass: "Current Password (to confirm)",
+                btnAccUpdate: "💾 Update Account",
+                phAccNewUser: "Leave blank if unchanged...",
+                phAccNewPass: "Leave blank if unchanged...",
+                phAccCurrentPass: "Enter your current password...",
                 adminPanelTitle: "Secure Admin Management Panel",
                 adminPanelSub: "Real-time management, filtering, and rank approvals for server players",
                 adminUsersListTitle: "Player List & Manual Update",
@@ -467,7 +534,10 @@
                 allStatuses: "All Statuses",
                 statusPending: "🟡 Pending Approval",
                 statusApproved: "🟢 Approved",
-                statusRejected: "🔴 Rejected"
+                statusRejected: "🔴 Rejected",
+                memberSince: "Member since:",
+                timelineTitle: "Your Rank Progress Timeline",
+                timelineEmpty: "No rank achievements logged on your timeline yet."
             }
         };
 
@@ -490,6 +560,29 @@
             { id: "Divine", name: "Divine", icon: "☀", req_he: "השג 130+ Advancements או 90% מכל ה-Advancements במשחק", req_en: "Obtain 130+ Advancements or 90% of all Advancements", difficulty_he: "אלוהי", difficulty_en: "Divine", style: "border-transparent bg-gradient-to-r from-blue-400 to-amber-400 bg-clip-border shadow-[0_0_25px_rgba(59,130,246,0.4)] text-amber-300 font-black" },
             { id: "GOD", name: "GOD", icon: "🔱", req_he: "השלם כמעט את כל התוכן בשרת, אישור אדמין, הבס את הדרקון 100 פעמים וה-Wither 10 פעמים", req_en: "Complete almost all server content, Admin approval, defeat Dragon 100 times and Wither 10 times", difficulty_he: "אל השרת", difficulty_en: "Server God", style: "rank-god text-white font-black uppercase text-center" }
         ];
+
+        // --- 3b. RANK TRACKING HELPER ---
+        function checkRankUp(user) {
+            if (!user) return;
+            const storageKey = `summerlag_last_rank_${user.minecraft_username.toLowerCase()}`;
+            const lastSeenRank = localStorage.getItem(storageKey);
+            
+            if (lastSeenRank && lastSeenRank !== user.current_rank) {
+                const oldIdx = RANKS_DATA.findIndex(r => r.id === lastSeenRank);
+                const newIdx = RANKS_DATA.findIndex(r => r.id === user.current_rank);
+                
+                if (newIdx > oldIdx) {
+                    const rankObj = RANKS_DATA.find(r => r.id === user.current_rank) || { name: user.current_rank, icon: "✨" };
+                    setTimeout(() => {
+                        showToast(currentLang === 'he' 
+                            ? `🎉 האדמין אישר את הבקשה שלך! עלית לדרגה: ${rankObj.icon} ${rankObj.name}!` 
+                            : `🎉 The admin approved your request! You ranked up to: ${rankObj.icon} ${rankObj.name}!`);
+                        triggerLiveConfettiBurst();
+                    }, 400);
+                }
+            }
+            localStorage.setItem(storageKey, user.current_rank);
+        }
 
         // --- 4. REALTIME CLOUD LISTENERS ---
         function startCloudSynchronization() {
@@ -516,9 +609,13 @@
                 }
                 if (currentUser) {
                     const updatedMe = Object.values(cloud_users).find(u => u.minecraft_username.toLowerCase() === currentUser.minecraft_username.toLowerCase());
-                    if (updatedMe) { currentUser = updatedMe; sessionStorage.setItem('session_user', JSON.stringify(currentUser)); }
+                    if (updatedMe) {
+                        checkRankUp(updatedMe);
+                        currentUser = updatedMe; 
+                        sessionStorage.setItem('session_user', JSON.stringify(currentUser)); 
+                    }
                 }
-                if(loadedTables >= 4) { renderPlayerDashboard(); renderAdminPanel(); renderRankCatalog(); renderLeaderboard(); renderCommunityStats(); }
+                if(loadedTables >= 4) { renderPlayerDashboard(); renderAdminPanel(); renderRankCatalog(); renderLeaderboard(); renderCommunityStats(); checkMinecraftServerStatus(); }
                 else { checkLoader(); }
             });
 
@@ -530,7 +627,7 @@
 
             database.ref('history').on('value', (snapshot) => {
                 cloud_history = snapshot.val() || {};
-                if(loadedTables >= 4) { renderAdminPanel(); }
+                if(loadedTables >= 4) { renderPlayerDashboard(); renderAdminPanel(); }
                 else { checkLoader(); }
             });
 
@@ -543,12 +640,21 @@
         }
 
         // --- 5. UPDATED MINECRAFT SERVER STATUS API ---
+        let statusAutoRefreshTimer = null;
+
         function checkMinecraftServerStatus() {
             const badge = document.getElementById('serverStatusBadge');
+            const refreshBtn = document.getElementById('serverStatusRefreshBtn');
+            const note = document.getElementById('text_statusNote');
             if(!badge) return;
             const serverIP = "ilay1213.aternos.me";
-            
-            fetch(`https://api.mcstatus.io/v2/status/java/${serverIP}`)
+
+            if(refreshBtn) {
+                refreshBtn.disabled = true;
+                refreshBtn.querySelector('i').classList.add('fa-spin');
+            }
+
+            fetch(`https://api.mcstatus.io/v2/status/java/${serverIP}?_=${Date.now()}`, { cache: "no-store" })
                 .then(response => response.json())
                 .then(data => {
                     if (data.online) {
@@ -558,15 +664,31 @@
                         badge.innerHTML = currentLang === 'he' 
                             ? `🟢 שרת באוויר | ${onlinePlayers}/${maxPlayers} שחקנים מחוברים`
                             : `🟢 Server Online | ${onlinePlayers}/${maxPlayers} Players Connected`;
+                        if(note) note.innerText = "";
                     } else {
                         badge.className = "bg-red-500/10 text-red-400 border border-red-500/20 px-3 py-1 rounded-full text-xs font-bold tracking-wide font-minecraft uppercase";
-                        badge.innerHTML = currentLang === 'he' ? `🔴 השרת כבוי באטרנוס` : `🔴 Server Offline on Aternos`;
+                        badge.innerHTML = currentLang === 'he' ? `🔴 השרת כבוי / בהמתנה באטרנוס` : `🔴 Server Offline / Sleeping on Aternos`;
+                        if(note) note.innerText = currentLang === 'he' 
+                            ? "שימו לב: לאחר הפעלת השרת באטרנוס יכול לעבור עד דקה-שתיים עד שהסטטוס יתעדכן כאן. אם השרת פעיל אצלכם, פשוט נסו להתחבר ישירות, או לחצו על כפתור הרענון."
+                            : "Note: after starting the server on Aternos, it can take up to a minute or two for this status to update. If you're sure the server is running, try connecting directly or click the refresh button.";
                     }
                 })
                 .catch(() => {
                     badge.className = "bg-gray-500/10 text-gray-400 border border-gray-500/20 px-3 py-1 rounded-full text-xs font-bold tracking-wide font-minecraft uppercase";
                     badge.innerHTML = currentLang === 'he' ? `⚪ לא ניתן לקרוא סטטוס` : `⚪ Status Unreachable`;
+                    if(note) note.innerText = "";
+                })
+                .finally(() => {
+                    if(refreshBtn) {
+                        refreshBtn.disabled = false;
+                        refreshBtn.querySelector('i').classList.remove('fa-spin');
+                    }
                 });
+        }
+
+        function startStatusAutoRefresh() {
+            if(statusAutoRefreshTimer) clearInterval(statusAutoRefreshTimer);
+            statusAutoRefreshTimer = setInterval(checkMinecraftServerStatus, 60000);
         }
 
         // --- 6. LANGUAGE MANAGER ENGINE ---
@@ -612,6 +734,15 @@
             document.getElementById('lblFormNotes').innerText = str.lblFormNotes;
             document.getElementById('submitAppBtn').innerText = lang === 'he' ? '🚀 שלח בקשה לאישור' : '🚀 Submit Application';
             document.getElementById('text_histTitle').innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> ${str.histTitle}`;
+
+            document.getElementById('text_accSettingsTitle').innerHTML = `<i class="fa-solid fa-gear"></i> ${str.accSettingsTitle}`;
+            document.getElementById('lblAccNewUser').innerText = str.lblAccNewUser;
+            document.getElementById('lblAccNewPass').innerText = str.lblAccNewPass;
+            document.getElementById('lblAccCurrentPass').innerText = str.lblAccCurrentPass;
+            document.getElementById('btnAccUpdate').innerText = str.btnAccUpdate;
+            document.getElementById('accNewUsername').placeholder = str.phAccNewUser;
+            document.getElementById('accNewPassword').placeholder = str.phAccNewPass;
+            document.getElementById('accCurrentPassword').placeholder = str.phAccCurrentPass;
             
             document.getElementById('text_adminPanelTitle').innerHTML = `<i class="fa-solid fa-toolbox"></i> ${str.adminPanelTitle}`;
             document.getElementById('text_adminPanelSub').innerText = str.adminPanelSub;
@@ -633,6 +764,7 @@
             document.getElementById('optPending').innerText = str.statusPending;
             document.getElementById('optApproved').innerText = str.statusApproved;
             document.getElementById('optRejected').innerText = str.statusRejected;
+            document.getElementById('text_timelineTitle').innerHTML = `<i class="fa-solid fa-timeline"></i> ${str.timelineTitle}`;
 
             if (Object.keys(cloud_users).length > 0) {
                 renderPlayerDashboard();
@@ -687,14 +819,19 @@
             });
         }
 
+        // Improved Toast styled systematically
         function showToast(message, type = 'success') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
-            toast.className = `glass-card border px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 transform translate-x-[-20px] opacity-0 transition-all duration-300 text-sm font-bold ${type === 'success' ? 'border-emerald-500/40 text-emerald-400 bg-emerald-950/20' : 'border-red-500/40 text-red-400 bg-red-950/20'}`;
-            toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'}"></i> <span>${message}</span>`;
+            const isRankUp = message.includes('אישר') || message.includes('approved');
+            const borderStyle = isRankUp ? 'rank-rainbow' : (type === 'success' ? 'border-emerald-500/40 text-emerald-400 bg-emerald-950/20' : 'border-red-500/40 text-red-400 bg-red-950/20');
+            
+            toast.className = `glass-card border px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 transform translate-x-[-20px] opacity-0 transition-all duration-300 text-sm font-bold ${borderStyle}`;
+            toast.innerHTML = `<i class="fa-solid ${isRankUp ? 'fa-gift text-yellow-400 animate-pulse' : (type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation')}"></i> <span>${message}</span>`;
+            
             container.appendChild(toast);
             setTimeout(() => { toast.classList.remove('translate-x-[-20px]', 'opacity-0'); }, 50);
-            setTimeout(() => { toast.classList.add('opacity-0', 'translate-y-[-10px]'); setTimeout(() => toast.remove(), 300); }, 4000);
+            setTimeout(() => { toast.classList.add('opacity-0', 'translate-y-[-10px]'); setTimeout(() => toast.remove(), 300); }, 6000);
         }
 
         function renderLeaderboard() {
@@ -757,7 +894,10 @@
 
             const customId = "user_" + Date.now();
             database.ref('users/' + customId).set({ id: customId, minecraft_username: username, password: password, current_rank: "Affiliate", role: (username.toLowerCase() === 'adminsummer' ? "admin" : "user"), created_at: new Date().toISOString() }, (err) => {
-                if(!err) { showToast(currentLang === 'he' ? "נרשמת בהצלחה! התחבר." : "Registered successfully! Please log in."); switchAuthTab('login'); document.getElementById('loginUser').value = username; document.getElementById('registerForm').reset(); }
+                if(!err) { 
+                    localStorage.setItem(`summerlag_last_rank_${username.toLowerCase()}`, "Affiliate");
+                    showToast(currentLang === 'he' ? "נרשמת בהצלחה! התחבר." : "Registered successfully! Please log in."); switchAuthTab('login'); document.getElementById('loginUser').value = username; document.getElementById('registerForm').reset(); 
+                }
             });
         }
 
@@ -779,6 +919,75 @@
         }
 
         function handleLogout() { currentUser = null; sessionStorage.removeItem('session_user'); initApp(); }
+
+        // --- 9b. ACCOUNT SETTINGS (USERNAME / PASSWORD CHANGE) ---
+        function handleAccountUpdate(e) {
+            e.preventDefault();
+            if(!currentUser) return;
+
+            const newUsernameRaw = document.getElementById('accNewUsername').value.trim();
+            const newPassword = document.getElementById('accNewPassword').value.trim();
+            const currentPasswordConfirm = document.getElementById('accCurrentPassword').value.trim();
+
+            if (currentPasswordConfirm !== currentUser.password) {
+                return showToast(currentLang === 'he' ? "הסיסמה הנוכחית שגויה!" : "Current password is incorrect!", "error");
+            }
+
+            if (!newUsernameRaw && !newPassword) {
+                return showToast(currentLang === 'he' ? "לא הוזן שינוי כלשהו." : "No changes were entered.", "error");
+            }
+
+            if (newPassword && newPassword.length < 4) {
+                return showToast(currentLang === 'he' ? "הסיסמה החדשה קצרה מדי (מינימום 4 תווים)!" : "New password is too short (minimum 4 characters)!", "error");
+            }
+
+            let finalUsername = currentUser.minecraft_username;
+
+            if (newUsernameRaw && newUsernameRaw.toLowerCase() !== currentUser.minecraft_username.toLowerCase()) {
+                const taken = Object.values(cloud_users).some(u => u.id !== currentUser.id && u.minecraft_username.toLowerCase() === newUsernameRaw.toLowerCase());
+                if (taken) {
+                    return showToast(currentLang === 'he' ? "שם המשתמש הזה תפוס על ידי שחקן אחר!" : "This username is already taken by another player!", "error");
+                }
+                if (currentUser.minecraft_username.toLowerCase() === 'adminsummer') {
+                    return showToast(currentLang === 'he' ? "לא ניתן לשנות את שם המשתמש של חשבון האדמין הראשי!" : "Cannot change the main admin account's username!", "error");
+                }
+                finalUsername = newUsernameRaw;
+            }
+
+            const updates = {};
+            updates['users/' + currentUser.id + '/minecraft_username'] = finalUsername;
+            if (newPassword) { updates['users/' + currentUser.id + '/password'] = newPassword; }
+            updates['users/' + currentUser.id + '/updated_at'] = new Date().toISOString();
+
+            if (finalUsername !== currentUser.minecraft_username) {
+                Object.values(cloud_applications).forEach(app => {
+                    if (app.user_id === currentUser.id) {
+                        updates['applications/' + app.id + '/minecraft_username'] = finalUsername;
+                    }
+                });
+                Object.values(cloud_history).forEach(h => {
+                    if (h.user_id === currentUser.id) {
+                        updates['history/' + h.id + '/minecraft_username'] = finalUsername;
+                    }
+                });
+            }
+
+            database.ref().update(updates, (err) => {
+                if (err) {
+                    return showToast(currentLang === 'he' ? "שגיאה בעדכון הפרטים. נסה שוב." : "Error updating details. Please try again.", "error");
+                }
+                currentUser = { ...currentUser, minecraft_username: finalUsername, password: newPassword || currentUser.password };
+                sessionStorage.setItem('session_user', JSON.stringify(currentUser));
+
+                document.getElementById('accNewUsername').value = "";
+                document.getElementById('accNewPassword').value = "";
+                document.getElementById('accCurrentPassword').value = "";
+
+                showToast(currentLang === 'he' ? "פרטי החשבון עודכנו בהצלחה! ✅" : "Account details updated successfully! ✅");
+                renderNav();
+                renderPlayerDashboard();
+            });
+        }
 
         // --- 10. APPLICATION HANDLING ---
         let currentUploadedBase64 = "";
@@ -812,6 +1021,77 @@
                 if(!err) { showToast(currentLang === 'he' ? "הבקשה נשלחה בהצלחה! 🚀" : "Application submitted successfully! 🚀"); document.getElementById('formNotes').value = ""; document.getElementById('screenshotPreview').classList.add('hidden'); document.getElementById('uploadPlaceholder').classList.remove('hidden'); currentUploadedBase64 = ""; }
             });
         }
+
+        // --- 10b. TRANSPARENT CONFETTI BACKGROUND ENGINE ---
+        function triggerLiveConfettiBurst() {
+            const canvas = document.getElementById('confettiCanvas');
+            canvas.classList.remove('hidden');
+            confettiActive = true;
+            initConfettiParticles();
+            drawConfettiLoop();
+            
+            // Turn off automatic explosion after 7 seconds
+            setTimeout(() => {
+                confettiActive = false;
+                canvas.classList.add('hidden');
+                if(confettiAnimationId) cancelAnimationFrame(confettiAnimationId);
+            }, 7000);
+        }
+
+        function initConfettiParticles() {
+            const canvas = document.getElementById('confettiCanvas');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            confettiPieces = [];
+            for (let i = 0; i < 120; i++) {
+                confettiPieces.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    r: Math.random() * 6 + 4,
+                    d: Math.random() * canvas.height,
+                    color: `hsl(${Math.random() * 360}, 95%, 60%)`,
+                    tilt: Math.random() * 10 - 5,
+                    tiltAngleIncremental: Math.random() * 0.07 + 0.03,
+                    tiltAngle: 0
+                });
+            }
+        }
+
+        function drawConfettiLoop() {
+            if (!confettiActive) return;
+            const canvas = document.getElementById('confettiCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            confettiPieces.forEach((p, idx) => {
+                p.tiltAngle += p.tiltAngleIncremental;
+                p.y += (Math.cos(p.d) + 3.5 + p.r / 2) / 2;
+                p.x += Math.sin(p.tiltAngle);
+                p.tilt = Math.sin(p.tiltAngle - idx / 3) * 15;
+
+                if (p.y > canvas.height) {
+                    p.x = Math.random() * canvas.width;
+                    p.y = -20;
+                    p.tilt = Math.random() * 10 - 5;
+                }
+
+                ctx.beginPath();
+                ctx.lineWidth = p.r;
+                ctx.strokeStyle = p.color;
+                ctx.moveTo(p.x + p.tilt + p.r / 2, p.y);
+                ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 2);
+                ctx.stroke();
+            });
+            confettiAnimationId = requestAnimationFrame(drawConfettiLoop);
+        }
+
+        window.addEventListener('resize', () => {
+            if (confettiActive) {
+                const canvas = document.getElementById('confettiCanvas');
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+        });
 
         // --- 11. INTERFACE RENDERERS ---
         function initApp() {
@@ -853,6 +1133,16 @@
             document.getElementById('lblFormNotes').innerText = str.lblFormNotes;
             document.getElementById('submitAppBtn').innerText = lang === 'he' ? '🚀 שלח בקשה לאישור' : '🚀 Submit Application';
             document.getElementById('text_histTitle').innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> ${str.histTitle}`;
+
+            document.getElementById('text_accSettingsTitle').innerHTML = `<i class="fa-solid fa-gear"></i> ${str.accSettingsTitle}`;
+            document.getElementById('lblAccNewUser').innerText = str.lblAccNewUser;
+            document.getElementById('lblAccNewPass').innerText = str.lblAccNewPass;
+            document.getElementById('lblAccCurrentPass').innerText = str.lblAccCurrentPass;
+            document.getElementById('btnAccUpdate').innerText = str.btnAccUpdate;
+            document.getElementById('accNewUsername').placeholder = str.phAccNewUser;
+            document.getElementById('accNewPassword').placeholder = str.phAccNewPass;
+            document.getElementById('accCurrentPassword').placeholder = str.phAccCurrentPass;
+
             document.getElementById('text_adminPanelTitle').innerHTML = `<i class="fa-solid fa-toolbox"></i> ${str.adminPanelTitle}`;
             document.getElementById('text_adminPanelSub').innerText = str.adminPanelSub;
             document.getElementById('text_adminUsersListTitle').innerText = str.adminUsersListTitle;
@@ -876,9 +1166,14 @@
             renderLeaderboard();
             renderAnnouncements();
             renderCommunityStats();
-            checkMinecraftServerStatus();
             
             if (currentUser) {
+                const updatedMe = Object.values(cloud_users).find(u => u.minecraft_username.toLowerCase() === currentUser.minecraft_username.toLowerCase());
+                if (updatedMe) {
+                    checkRankUp(updatedMe);
+                    currentUser = updatedMe;
+                    sessionStorage.setItem('session_user', JSON.stringify(currentUser));
+                }
                 document.getElementById('authSection').classList.add('hidden'); document.getElementById('playerDashboard').classList.remove('hidden');
                 renderPlayerDashboard();
                 if (currentUser.role === 'admin') { document.getElementById('adminPanel').classList.remove('hidden'); renderAdminPanel(); }
@@ -938,6 +1233,15 @@
                 ? `דרגה נוכחית: ${currentUser.current_rank} (${curIdx + 1} מתוך ${RANKS_DATA.length})`
                 : `Current Rank: ${currentUser.current_rank} (${curIdx + 1} of ${RANKS_DATA.length})`;
 
+            const memberSinceBadge = document.getElementById('dashMemberSince');
+            if(currentUser.created_at) {
+                const dateObj = new Date(currentUser.created_at);
+                const formattedDate = isNaN(dateObj.getTime()) ? '2026' : dateObj.toLocaleDateString(currentLang === 'he' ? 'he-IL' : 'en-US', {year: 'numeric', month: 'short', day: 'numeric'});
+                memberSinceBadge.innerHTML = `<i class="fa-solid fa-calendar-days text-gray-500"></i> ${T[currentLang].memberSince} <span class="text-white font-semibold">${formattedDate}</span>`;
+            } else {
+                memberSinceBadge.innerHTML = "";
+            }
+
             const select = document.getElementById('formRankSelect'); 
             if(curIdx + 1 < RANKS_DATA.length) { 
                 const nxt = RANKS_DATA[curIdx + 1]; 
@@ -957,39 +1261,69 @@
             if (apps.length === 0) { 
                 const noReqMsg = currentLang === 'he' ? 'טרם הוגשו בקשות לפרופיל זה.' : 'No requests submitted yet for this profile.';
                 listWrapper.innerHTML = `<div class="text-sm text-gray-500 text-center py-8">${noReqMsg}</div>`; 
-                return; 
+            } else {
+                apps.forEach(app => {
+                    let statusLabel = '';
+                    if (app.status === 'Pending') statusLabel = currentLang === 'he' ? '🟡 ממתין' : '🟡 Pending';
+                    if (app.status === 'Approved') statusLabel = currentLang === 'he' ? '🟢 אושר' : '🟢 Approved';
+                    if (app.status === 'Rejected') statusLabel = currentLang === 'he' ? '🔴 נדחה' : '🔴 Rejected';
+
+                    let statusBadge = `<span class="bg-yellow-500/20 text-yellow-400 px-2.5 py-1 rounded-lg text-xs font-bold">${statusLabel}</span>`;
+                    if (app.status === 'Approved') statusBadge = `<span class="bg-emerald-500/20 text-emerald-400 px-2.5 py-1 rounded-lg text-xs font-bold">${statusLabel}</span>`;
+                    if (app.status === 'Rejected') statusBadge = `<span class="bg-red-500/20 text-red-400 px-2.5 py-1 rounded-lg text-xs font-bold">${statusLabel}</span>`;
+                    
+                    const titleText = currentLang === 'he' ? 'בקשה לדרגת:' : 'Application for:';
+                    const notesText = currentLang === 'he' ? 'הערה:' : 'Note:';
+                    const adminNotesText = currentLang === 'he' ? 'תגובת אדמין:' : 'Admin Note:';
+                    const defaultNotes = app.notes || (currentLang === 'he' ? 'אין' : 'None');
+
+                    const div = document.createElement('div'); 
+                    div.className = "bg-white/5 border border-white/5 rounded-xl p-4 space-y-3";
+                    div.innerHTML = `
+                        <div class="flex justify-between items-center flex-wrap gap-2">
+                            <div class="text-sm font-bold text-white">${titleText} <span class="text-cyan-400 font-minecraft">${app.requested_rank}</span></div>
+                            ${statusBadge}
+                        </div>
+                        <div class="flex gap-4 items-center">
+                            <img src="${app.screenshot_url}" class="w-16 h-12 object-cover rounded-md border border-white/10 cursor-pointer hover:scale-105 transition-transform" onclick="window.open('${app.screenshot_url}')">
+                            <div class="text-xs text-gray-300 italic">${notesText} "${defaultNotes}"</div>
+                        </div>
+                        ${app.admin_note ? `<div class="text-xs bg-black/40 p-2.5 rounded-lg border border-white/5 text-gray-300"><strong>${adminNotesText}</strong> ${app.admin_note}</div>` : ""}
+                    `;
+                    listWrapper.appendChild(div);
+                });
             }
 
-            apps.forEach(app => {
-                let statusLabel = '';
-                if (app.status === 'Pending') statusLabel = currentLang === 'he' ? '🟡 ממתין' : '🟡 Pending';
-                if (app.status === 'Approved') statusLabel = currentLang === 'he' ? '🟢 אושר' : '🟢 Approved';
-                if (app.status === 'Rejected') statusLabel = currentLang === 'he' ? '🔴 נדחה' : '🔴 Rejected';
+            const timelineWrapper = document.getElementById('dashTimelineList');
+            timelineWrapper.innerHTML = "";
+            const historyRecords = Object.values(cloud_history).filter(h => h.user_id === currentUser.id).sort((a,b) => b.id.localeCompare(a.id));
 
-                let statusBadge = `<span class="bg-yellow-500/20 text-yellow-400 px-2.5 py-1 rounded-lg text-xs font-bold">${statusLabel}</span>`;
-                if (app.status === 'Approved') statusBadge = `<span class="bg-emerald-500/20 text-emerald-400 px-2.5 py-1 rounded-lg text-xs font-bold">${statusLabel}</span>`;
-                if (app.status === 'Rejected') statusBadge = `<span class="bg-red-500/20 text-red-400 px-2.5 py-1 rounded-lg text-xs font-bold">${statusLabel}</span>`;
-                
-                const titleText = currentLang === 'he' ? 'בקשה לדרגת:' : 'Application for:';
-                const notesText = currentLang === 'he' ? 'הערה:' : 'Note:';
-                const adminNotesText = currentLang === 'he' ? 'תגובת אדמין:' : 'Admin Note:';
-                const defaultNotes = app.notes || (currentLang === 'he' ? 'אין' : 'None');
+            if (historyRecords.length === 0) {
+                timelineWrapper.innerHTML = `<p class="text-xs text-gray-500 italic pt-2">${T[currentLang].timelineEmpty}</p>`;
+            } else {
+                historyRecords.forEach(record => {
+                    const node = document.createElement('div');
+                    node.className = "relative group";
+                    
+                    const oldRankObj = RANKS_DATA.find(r => r.id === record.old_rank) || {icon: "▫"};
+                    const newRankObj = RANKS_DATA.find(r => r.id === record.new_rank) || {icon: "⭐"};
+                    
+                    const subText = currentLang === 'he' 
+                        ? `שודרג מ-${oldRankObj.icon} ${record.old_rank} על ידי ${record.approved_by}` 
+                        : `Upgraded from ${oldRankObj.icon} ${record.old_rank} by ${record.approved_by}`;
 
-                const div = document.createElement('div'); 
-                div.className = "bg-white/5 border border-white/5 rounded-xl p-4 space-y-3";
-                div.innerHTML = `
-                    <div class="flex justify-between items-center flex-wrap gap-2">
-                        <div class="text-sm font-bold text-white">${titleText} <span class="text-cyan-400 font-minecraft">${app.requested_rank}</span></div>
-                        ${statusBadge}
-                    </div>
-                    <div class="flex gap-4 items-center">
-                        <img src="${app.screenshot_url}" class="w-16 h-12 object-cover rounded-md border border-white/10 cursor-pointer hover:scale-105 transition-transform" onclick="window.open('${app.screenshot_url}')">
-                        <div class="text-xs text-gray-300 italic">${notesText} "${defaultNotes}"</div>
-                    </div>
-                    ${app.admin_note ? `<div class="text-xs bg-black/40 p-2.5 rounded-lg border border-white/5 text-gray-300"><strong>${adminNotesText}</strong> ${app.admin_note}</div>` : ""}
-                `;
-                listWrapper.appendChild(div);
-            });
+                    node.innerHTML = `
+                        <div class="absolute -right-[31px] ltr:right-auto ltr:-left-[31px] top-1 w-4 h-4 rounded-full bg-cyan-400 border-4 border-mcDark group-hover:scale-125 transition-transform"></div>
+                        <div class="text-xs text-gray-500 font-mono mb-0.5">${record.approved_at || ''}</div>
+                        <div class="text-sm font-bold text-white flex items-center gap-1.5">
+                            <span>${newRankObj.icon}</span> 
+                            <span class="text-yellow-400 font-minecraft font-black">${record.new_rank}</span>
+                        </div>
+                        <div class="text-xs text-gray-400 mt-1">${subText}</div>
+                    `;
+                    timelineWrapper.appendChild(node);
+                });
+            }
         }
 
         function renderAdminPanel() {
