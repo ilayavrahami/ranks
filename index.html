@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SummerLag Survival - מערכת הדרגות</title>
+    <title>SummerLag Survival - מערכת הדרגות והתמיכה</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Rubik:wght@400;600;800&display=swap" rel="stylesheet">
@@ -227,8 +227,8 @@
                 <div id="playerDashboard" class="hidden space-y-8">
                     <div class="glass-card rounded-2xl p-6 border border-white/10 flex flex-col md:flex-row justify-between items-center gap-6">
                         <div class="flex items-center gap-4">
-                            <div class="w-16 h-16 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
-                                <i class="fa-solid fa-user-shield text-white"></i>
+                            <div id="dashSkinContainer" class="w-16 h-16 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-inner overflow-hidden p-1">
+                                <i class="fa-solid fa-user-shield text-white text-2xl"></i>
                             </div>
                             <div>
                                 <div id="text_dashWelcome" class="text-sm text-gray-400">שלום, שחקן סורבייבל!</div>
@@ -293,6 +293,38 @@
                         </div>
                     </div>
 
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="glass-card rounded-2xl p-6 border border-white/10">
+                            <h3 id="text_ticketTitle" class="text-lg font-bold mb-4 flex items-center gap-2 text-rose-400">
+                                <i class="fa-solid fa-headset"></i> פתיחת כרטיס תמיכה / דיווח
+                            </h3>
+                            <form onsubmit="handleTicketSubmit(event)" class="space-y-4">
+                                <div>
+                                    <label id="lblTicketType" class="block text-xs font-semibold text-gray-300 mb-1">סוג הפנייה</label>
+                                    <select id="ticketTypeSelect" required class="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-rose-400">
+                                        <option value="Griefing" id="optGriefing">❌ דיווח על גריפינג / גניבה</option>
+                                        <option value="Bug" id="optBug">🐛 דיווח על באג / תקלה בשרת</option>
+                                        <option value="Question" id="optQuestion">❓ שאלה / עזרה כללית</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label id="lblTicketDesc" class="block text-xs font-semibold text-gray-300 mb-1">פירוט הפנייה (ציין מיקומים/פרטים מדויקים)</label>
+                                    <textarea id="ticketDescription" required rows="4" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-rose-400 text-sm"></textarea>
+                                </div>
+                                <button type="submit" id="btnTicketSubmit" class="w-full bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-400 hover:to-pink-500 text-white font-black py-3 rounded-xl transition-all shadow-lg">
+                                    פתח כרטיס תמיכה 🎫
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="glass-card rounded-2xl p-6 border border-white/10 flex flex-col">
+                            <h3 id="text_ticketHistTitle" class="text-lg font-bold mb-4 flex items-center gap-2 text-amber-400">
+                                <i class="fa-solid fa-ticket"></i> כרטיסי התמיכה שלי
+                            </h3>
+                            <div class="overflow-y-auto flex-1 max-h-[340px] pr-2 space-y-3" id="playerTicketsList"></div>
+                        </div>
+                    </div>
+
                     <div class="glass-card rounded-2xl p-6 border border-white/10">
                         <h3 id="text_timelineTitle" class="text-lg font-bold mb-5 flex items-center gap-2 text-cyan-400">
                             <i class="fa-solid fa-timeline"></i> היסטוריית התקדמות הדרגות שלך
@@ -316,6 +348,40 @@
                                     <input type="password" id="accNewPassword" placeholder="השאר ריק אם אין שינוי..." class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-yellow-400 transition-colors">
                                 </div>
                             </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label id="lblAccMcIgn" class="block text-xs font-semibold text-cyan-400 mb-1">שם השחקן במיינקראפט (עבור הסקין והתצוגה)</label>
+                                    <input type="text" id="accMcIgn" placeholder="הזן את ה-IGN המדויק שלך..." class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-cyan-400 transition-colors">
+                                </div>
+                                <div>
+                                    <label id="lblAccDiscord" class="block text-xs font-semibold text-gray-300 mb-1">משתמש דיסקורד / קישור</label>
+                                    <input type="text" id="accDiscord" placeholder="הזן כינוי או קישור פרופיל..." class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-yellow-400 transition-colors">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label id="lblAccYoutube" class="block text-xs font-semibold text-gray-300 mb-1">ערוץ יוטיוב (קישור)</label>
+                                    <input type="url" id="accYoutube" placeholder="https://youtube.com/..." class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-yellow-400 transition-colors">
+                                </div>
+                                <div>
+                                    <label id="lblAccTiktok" class="block text-xs font-semibold text-gray-300 mb-1">קישור טיקטוק</label>
+                                    <input type="url" id="accTiktok" placeholder="https://tiktok.com/@..." class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-yellow-400 transition-colors">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label id="lblAccBio" class="block text-xs font-semibold text-gray-300 mb-1">ביוגרפיה / אודות (Bio)</label>
+                                    <textarea id="accBio" rows="2" placeholder="ספר משהו על עצמך..." class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-yellow-400 text-sm resize-none"></textarea>
+                                </div>
+                                <div>
+                                    <label id="lblAccCoords" class="block text-xs font-semibold text-gray-300 mb-1">קואורדינטות בסיס / חנות (Coordinates)</label>
+                                    <input type="text" id="accCoords" placeholder="X: 250, Y: 64, Z: -1200" class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-400 transition-colors">
+                                </div>
+                            </div>
+
                             <div>
                                 <label id="lblAccCurrentPass" class="block text-xs font-semibold text-gray-300 mb-1">סיסמה נוכחית (לאימות השינוי)</label>
                                 <input type="password" id="accCurrentPassword" required placeholder="הזן את הסיסמה הנוכחית שלך..." class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-yellow-400 transition-colors">
@@ -341,15 +407,23 @@
                     <input type="text" id="adminSearch" oninput="renderAdminPanel()" placeholder="חפש שחקן..." class="bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-red-400 w-full md:w-44">
                     <select id="adminFilterStatus" onchange="renderAdminPanel()" class="bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-red-400">
                         <option id="optAllStatus" value="All">כל הסטטוסים</option>
-                        <option id="optPending" value="Pending">🟡 ממתין לאישור</option>
-                        <option id="optApproved" value="Approved">🟢 אושר</option>
-                        <option id="optRejected" value="Rejected">🔴 נדחה</option>
+                        <option id="optPending" value="Pending">🟡 ממתין</option>
+                        <option id="optApproved" value="Approved">🟢 אושר / טופל</option>
+                        <option id="optRejected" value="Rejected">🔴 נדחה / בוטל</option>
                     </select>
                 </div>
             </div>
 
+            <div class="flex gap-4 border-b border-white/5 font-bold text-sm">
+                <button onclick="switchAdminSubTab('apps')" id="adminTabBtnApps" class="pb-3 border-b-2 border-red-500 text-red-400">📋 בקשות דרגה</button>
+                <button onclick="switchAdminSubTab('tickets')" id="adminTabBtnTickets" class="pb-3 border-b-2 border-transparent text-gray-400">🎫 כרטיסי תמיכה ודיווחים</button>
+            </div>
+
             <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                <div class="xl:col-span-2 space-y-4 max-h-[600px] overflow-y-auto pr-2" id="adminAppsQueue"></div>
+                <div class="xl:col-span-2 space-y-4 max-h-[600px] overflow-y-auto pr-2">
+                    <div id="adminAppsQueue" class="space-y-4"></div>
+                    <div id="adminTicketsQueue" class="space-y-4 hidden"></div>
+                </div>
                 
                 <div class="xl:col-span-1 flex flex-col gap-6">
                     <div class="glass-card border border-white/5 bg-black/20 rounded-xl p-4 space-y-4 max-h-[300px] overflow-y-auto">
@@ -383,6 +457,43 @@
 
     </main>
 
+    <div id="playerProfileModal" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closePlayerProfile()"></div>
+        <div class="glass-card relative z-10 rounded-3xl border border-white/10 w-full max-w-lg shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-400 via-purple-500 to-yellow-400 rounded-t-3xl"></div>
+            <button onclick="closePlayerProfile()" id="profileCloseBtn" class="absolute top-4 end-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all z-10">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="p-8 space-y-6">
+                <div class="flex items-center gap-5">
+                    <div id="profileSkinContainer" class="w-20 h-28 flex-shrink-0 rounded-2xl bg-gradient-to-br from-cyan-500/10 to-purple-600/10 border border-white/10 flex items-center justify-center overflow-hidden p-1">
+                    </div>
+                    <div class="min-w-0">
+                        <h2 id="profileUsername" class="text-2xl font-black font-minecraft text-white truncate"></h2>
+                        <div id="profileRankBadge" class="mt-1.5"></div>
+                        <div id="profileSocialLinks" class="flex gap-2 mt-3"></div>
+                    </div>
+                </div>
+                <div class="space-y-1.5">
+                    <div id="text_profileBioLabel" class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">ביוגרפיה</div>
+                    <div id="profileBio" class="text-sm text-gray-300 bg-black/30 rounded-xl p-3.5 border border-white/5 leading-relaxed min-h-[52px]"></div>
+                </div>
+                <div class="space-y-1.5">
+                    <div id="text_profileCoordsLabel" class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">קואורדינטות בסיס</div>
+                    <div class="text-sm text-gray-300 bg-black/30 rounded-xl p-3.5 border border-white/5 font-mono flex items-center gap-2">
+                        <i class="fa-solid fa-map-pin text-cyan-400 text-xs flex-shrink-0"></i>
+                        <span id="profileCoordsText"></span>
+                    </div>
+                </div>
+                <div class="space-y-2.5">
+                    <div id="text_profileHistoryLabel" class="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
+                        <i class="fa-solid fa-clock-rotate-left"></i> היסטוריית דרגות אחרונה
+                    </div>
+                    <div id="profileHistoryList" class="space-y-2 max-h-[220px] overflow-y-auto pe-1"></div>
+                </div>
+            </div>
+        </div>
+    </div>
     <footer class="mt-24 border-t border-white/5 py-8 text-center text-sm text-gray-500">
         <p id="text_footerText">© 2026 SummerLag Survival. כל הזכויות שמורות למנהלי השרת.</p>
     </footer>
@@ -404,13 +515,14 @@
 
         let cloud_users = {};
         let cloud_applications = {};
+        let cloud_tickets = {};
         let cloud_history = {};
         let cloud_announcements = {}; 
         let currentUser = JSON.parse(sessionStorage.getItem('session_user')) || null;
         
         let currentLang = localStorage.getItem('summerlag_lang') || 'he';
+        let activeAdminSubTab = 'apps';
 
-        // Confetti Global Engine State Variables
         let confettiActive = false;
         let confettiPieces = [];
         let confettiAnimationId = null;
@@ -471,12 +583,46 @@
                 phRegPass: "לפחות 4 תווים...",
                 phAnnText: "הקלד מודעה: ביום שישי בשעה 18:00...",
                 allStatuses: "כל הסטטוסים",
-                statusPending: "🟡 ממתין לאישור",
-                statusApproved: "🟢 אושר",
-                statusRejected: "🔴 נדחה",
+                statusPending: "🟡 ממתין",
+                statusApproved: "🟢 אושר / טופל",
+                statusRejected: "🔴 נדחה / בוטל",
                 memberSince: "חבר באתר מאז:",
                 timelineTitle: "היסטוריית התקדמות הדרגות שלך",
-                timelineEmpty: "אין עדיין שלבים מתועדים בציר הזמן."
+                timelineEmpty: "אין עדיין שלבים מתועדים בציר הזמן.",
+                profileBioLabel: "ביוגרפיה",
+                profileCoordsLabel: "קואורדינטות בסיס",
+                profileHistoryLabel: "היסטוריית דרגות אחרונה",
+                profileBioEmpty: "שחקן זה עדיין לא הוסיף ביוגרפיה.",
+                profileCoordsEmpty: "הקואורדינטות לא הוזנו עדיין.",
+                profileHistoryEmpty: "אין עדיין שדרוגי דרגה מתועדים.",
+                lblAccBio: "ביוגרפיה / אודות (Bio)",
+                lblAccCoords: "קואורדינטות בסיס / חנות (Coordinates)",
+                phAccBio: "ספר משהו על עצמך...",
+                phAccCoords: "X: 250, Y: 64, Z: -1200",
+                lblAccMcIgn: "שם שחקן במיינקראפט (עבור הסקין והתצוגה)",
+                phAccMcIgn: "הזן את ה-IGN המדויק שלך...",
+                lblAccDiscord: "משתמש דיסקורד / קישור",
+                phAccDiscord: "הזן כינוי או קישור פרופיל...",
+                lblAccYoutube: "ערוץ יוטיוב (קישור)",
+                phAccYoutube: "https://youtube.com/...",
+                lblAccTiktok: "קישור טיקטוק",
+                phAccTiktok: "https://tiktok.com/@...",
+                
+                // Tickets Extensions
+                ticketTitle: "פתיחת כרטיס תמיכה / דיווח",
+                lblTicketType: "סוג הפנייה",
+                lblTicketDesc: "פירוט הפנייה (ציין מיקומים/פרטים מדויקים)",
+                btnTicketSubmit: "פתח כרטיס תמיכה 🎫",
+                ticketHistTitle: "כרטיסי התמיכה שלי",
+                optGriefing: "❌ דיווח על גריפינג / גניבה",
+                optBug: "🐛 דיווח על באג / תקלה בשרת",
+                optQuestion: "❓ שאלה / עזרה כללית",
+                ticketType: "סוג פנייה:",
+                ticketDesc: "תיאור הפנייה:",
+                adminReply: "תגובת הנהלה:",
+                statusInProgress: "🔵 בטיפול",
+                statusResolved: "🟢 טופל בהצלחה",
+                statusCanceled: "🔴 בוטל"
             },
             en: {
                 appLoader: "Connecting to secure cloud database...",
@@ -532,12 +678,46 @@
                 phRegPass: "At least 4 characters...",
                 phAnnText: "Type announcement: On Friday at 18:00...",
                 allStatuses: "All Statuses",
-                statusPending: "🟡 Pending Approval",
-                statusApproved: "🟢 Approved",
-                statusRejected: "🔴 Rejected",
+                statusPending: "🟡 Pending",
+                statusApproved: "🟢 Approved / Solved",
+                statusRejected: "🔴 Rejected / Canceled",
                 memberSince: "Member since:",
                 timelineTitle: "Your Rank Progress Timeline",
-                timelineEmpty: "No rank achievements logged on your timeline yet."
+                timelineEmpty: "No rank achievements logged on your timeline yet.",
+                profileBioLabel: "Biography",
+                profileCoordsLabel: "Base Coordinates",
+                profileHistoryLabel: "Recent Rank History",
+                profileBioEmpty: "This player hasn't added a bio yet.",
+                profileCoordsEmpty: "No coordinates have been set yet.",
+                profileHistoryEmpty: "No rank upgrades recorded yet.",
+                lblAccBio: "Biography / About (Bio)",
+                lblAccCoords: "Base / Shop Coordinates",
+                phAccBio: "Tell us something about yourself...",
+                phAccCoords: "X: 250, Y: 64, Z: -1200",
+                lblAccMcIgn: "Minecraft In-Game Name (for Skin)",
+                phAccMcIgn: "Enter exact in-game name...",
+                lblAccDiscord: "Discord Username/Link",
+                phAccDiscord: "Enter username or profile link...",
+                lblAccYoutube: "YouTube Channel (Link)",
+                phAccYoutube: "https://youtube.com/...",
+                lblAccTiktok: "TikTok Link",
+                phAccTiktok: "https://tiktok.com/@...",
+                
+                // Tickets Extensions
+                ticketTitle: "Open Support Ticket / Report",
+                lblTicketType: "Ticket Type",
+                lblTicketDesc: "Details (Provide exact coordinates or info)",
+                btnTicketSubmit: "Open Support Ticket 🎫",
+                ticketHistTitle: "My Support Tickets",
+                optGriefing: "❌ Report Griefing / Theft",
+                optBug: "🐛 Bug Report / Issue",
+                optQuestion: "❓ General Question / Help",
+                ticketType: "Type:",
+                ticketDesc: "Description:",
+                adminReply: "Admin Response:",
+                statusInProgress: "🔵 Processing",
+                statusResolved: "🟢 Resolved",
+                statusCanceled: "🔴 Canceled"
             }
         };
 
@@ -589,7 +769,7 @@
             let loadedTables = 0;
             const checkLoader = () => {
                 loadedTables++;
-                if(loadedTables >= 4) { 
+                if(loadedTables >= 5) { 
                     document.getElementById('appLoader').classList.add('hidden');
                     initApp();
                 }
@@ -604,7 +784,13 @@
                         password: "ilaytheking",
                         current_rank: "GOD",
                         role: "admin",
-                        created_at: new Date().toISOString()
+                        created_at: new Date().toISOString(),
+                        bio: "",
+                        coordinates: "",
+                        mc_ign: "AdminSummer",
+                        discord: "",
+                        youtube: "",
+                        tiktok: ""
                     });
                 }
                 if (currentUser) {
@@ -615,26 +801,32 @@
                         sessionStorage.setItem('session_user', JSON.stringify(currentUser)); 
                     }
                 }
-                if(loadedTables >= 4) { renderPlayerDashboard(); renderAdminPanel(); renderRankCatalog(); renderLeaderboard(); renderCommunityStats(); checkMinecraftServerStatus(); }
+                if(loadedTables >= 5) { renderPlayerDashboard(); renderAdminPanel(); renderRankCatalog(); renderLeaderboard(); renderCommunityStats(); checkMinecraftServerStatus(); }
                 else { checkLoader(); }
             });
 
             database.ref('applications').on('value', (snapshot) => {
                 cloud_applications = snapshot.val() || {};
-                if(loadedTables >= 4) { renderPlayerDashboard(); renderAdminPanel(); renderCommunityStats(); }
+                if(loadedTables >= 5) { renderPlayerDashboard(); renderAdminPanel(); renderCommunityStats(); }
+                else { checkLoader(); }
+            });
+
+            database.ref('tickets').on('value', (snapshot) => {
+                cloud_tickets = snapshot.val() || {};
+                if(loadedTables >= 5) { renderPlayerDashboard(); renderAdminPanel(); }
                 else { checkLoader(); }
             });
 
             database.ref('history').on('value', (snapshot) => {
                 cloud_history = snapshot.val() || {};
-                if(loadedTables >= 4) { renderPlayerDashboard(); renderAdminPanel(); }
+                if(loadedTables >= 5) { renderPlayerDashboard(); renderAdminPanel(); }
                 else { checkLoader(); }
             });
 
             database.ref('announcements').on('value', (snapshot) => {
                 cloud_announcements = snapshot.val() || {};
                 renderAnnouncements();
-                if(loadedTables >= 4) { renderAdminPanel(); }
+                if(loadedTables >= 5) { renderAdminPanel(); }
                 else { checkLoader(); }
             });
         }
@@ -744,6 +936,30 @@
             document.getElementById('accNewPassword').placeholder = str.phAccNewPass;
             document.getElementById('accCurrentPassword').placeholder = str.phAccCurrentPass;
             
+            document.getElementById('lblAccBio').innerText = str.lblAccBio;
+            document.getElementById('lblAccCoords').innerText = str.lblAccCoords;
+            document.getElementById('accBio').placeholder = str.phAccBio;
+            document.getElementById('accCoords').placeholder = str.phAccCoords;
+            
+            document.getElementById('lblAccMcIgn').innerText = str.lblAccMcIgn;
+            document.getElementById('accMcIgn').placeholder = str.phAccMcIgn;
+            document.getElementById('lblAccDiscord').innerText = str.lblAccDiscord;
+            document.getElementById('accDiscord').placeholder = str.phAccDiscord;
+            document.getElementById('lblAccYoutube').innerText = str.lblAccYoutube;
+            document.getElementById('accYoutube').placeholder = str.phAccYoutube;
+            document.getElementById('lblAccTiktok').innerText = str.lblAccTiktok;
+            document.getElementById('accTiktok').placeholder = str.phAccTiktok;
+
+            // Tickets Language mappings
+            document.getElementById('text_ticketTitle').innerHTML = `<i class="fa-solid fa-headset"></i> ${str.ticketTitle}`;
+            document.getElementById('lblTicketType').innerText = str.lblTicketType;
+            document.getElementById('lblTicketDesc').innerText = str.lblTicketDesc;
+            document.getElementById('btnTicketSubmit').innerText = str.btnTicketSubmit;
+            document.getElementById('text_ticketHistTitle').innerHTML = `<i class="fa-solid fa-ticket"></i> ${str.ticketHistTitle}`;
+            document.getElementById('optGriefing').innerText = str.optGriefing;
+            document.getElementById('optBug').innerText = str.optBug;
+            document.getElementById('optQuestion').innerText = str.optQuestion;
+
             document.getElementById('text_adminPanelTitle').innerHTML = `<i class="fa-solid fa-toolbox"></i> ${str.adminPanelTitle}`;
             document.getElementById('text_adminPanelSub').innerText = str.adminPanelSub;
             document.getElementById('text_adminUsersListTitle').innerText = str.adminUsersListTitle;
@@ -751,7 +967,6 @@
             document.getElementById('btnAnnPublish').innerText = str.btnAnnPublish;
             document.getElementById('text_catalogTitle').innerHTML = `<i class="fa-solid fa-layer-group text-cyan-400"></i> ${str.catalogTitle}`;
             document.getElementById('text_footerText').innerText = str.footerText;
-            
             document.getElementById('adminSearch').placeholder = str.phSearchPlayer;
             document.getElementById('rankSearchInput').placeholder = str.phSearchRank;
             document.getElementById('loginUser').placeholder = str.phLoginUser;
@@ -759,12 +974,19 @@
             document.getElementById('regUser').placeholder = str.phRegUser;
             document.getElementById('regPassword').placeholder = str.phRegPass;
             document.getElementById('newAnnText').placeholder = str.phAnnText;
-            
             document.getElementById('optAllStatus').innerText = str.allStatuses;
             document.getElementById('optPending').innerText = str.statusPending;
             document.getElementById('optApproved').innerText = str.statusApproved;
             document.getElementById('optRejected').innerText = str.statusRejected;
             document.getElementById('text_timelineTitle').innerHTML = `<i class="fa-solid fa-timeline"></i> ${str.timelineTitle}`;
+
+            document.getElementById('text_profileBioLabel').innerText = str.profileBioLabel;
+            document.getElementById('text_profileCoordsLabel').innerText = str.profileCoordsLabel;
+            document.getElementById('text_profileHistoryLabel').innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> ${str.profileHistoryLabel}`;
+
+            // Sync structural tab bindings for admin text
+            document.getElementById('adminTabBtnApps').innerText = lang === 'he' ? '📋 בקשות דרגה' : '📋 Rank Applications';
+            document.getElementById('adminTabBtnTickets').innerText = lang === 'he' ? '🎫 כרטיסי תמיכה' : '🎫 Support Tickets';
 
             if (Object.keys(cloud_users).length > 0) {
                 renderPlayerDashboard();
@@ -819,7 +1041,6 @@
             });
         }
 
-        // Improved Toast styled systematically
         function showToast(message, type = 'success') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
@@ -848,7 +1069,9 @@
                 const rankObj = RANKS_DATA.find(r => r.id === u.current_rank) || RANKS_DATA[0];
                 let placement = i < 3 ? ["🥇", "🥈", "🥉"][i] : `${i + 1}.`;
                 const div = document.createElement('div');
-                div.className = "flex items-center justify-between bg-black/40 border border-white/5 p-3 rounded-xl hover:bg-black/60 transition-colors gap-2";
+                div.className = "flex items-center justify-between bg-black/40 border border-white/5 p-3 rounded-xl hover:bg-black/60 hover:border-cyan-400/30 transition-colors gap-2 cursor-pointer";
+                div.title = currentLang === 'he' ? `לחץ לצפייה בפרופיל ${u.minecraft_username}` : `Click to view ${u.minecraft_username}'s profile`;
+                div.onclick = () => openPlayerProfile(u.id);
                 div.innerHTML = `<div class="flex items-center gap-3"><span class="font-minecraft font-black text-sm w-6 text-center">${placement}</span><span class="font-bold text-gray-200 text-sm tracking-wide">${u.minecraft_username}</span></div><span class="text-[11px] font-minecraft font-bold bg-white/5 px-2.5 py-1 rounded-md border border-white/5 text-gray-300">${rankObj.icon} ${rankObj.name}</span>`;
                 container.appendChild(div);
             });
@@ -893,7 +1116,20 @@
             if(Object.values(cloud_users).some(u => u.minecraft_username.toLowerCase() === username.toLowerCase())) { return showToast(currentLang === 'he' ? "השחקן כבר רשום!" : "Username already registered!", "error"); }
 
             const customId = "user_" + Date.now();
-            database.ref('users/' + customId).set({ id: customId, minecraft_username: username, password: password, current_rank: "Affiliate", role: (username.toLowerCase() === 'adminsummer' ? "admin" : "user"), created_at: new Date().toISOString() }, (err) => {
+            database.ref('users/' + customId).set({ 
+                id: customId, 
+                minecraft_username: username, 
+                password: password, 
+                current_rank: "Affiliate", 
+                role: (username.toLowerCase() === 'adminsummer' ? "admin" : "user"), 
+                created_at: new Date().toISOString(), 
+                bio: "", 
+                coordinates: "",
+                mc_ign: username,
+                discord: "",
+                youtube: "",
+                tiktok: ""
+            }, (err) => {
                 if(!err) { 
                     localStorage.setItem(`summerlag_last_rank_${username.toLowerCase()}`, "Affiliate");
                     showToast(currentLang === 'he' ? "נרשמת בהצלחה! התחבר." : "Registered successfully! Please log in."); switchAuthTab('login'); document.getElementById('loginUser').value = username; document.getElementById('registerForm').reset(); 
@@ -920,20 +1156,32 @@
 
         function handleLogout() { currentUser = null; sessionStorage.removeItem('session_user'); initApp(); }
 
-        // --- 9b. ACCOUNT SETTINGS (USERNAME / PASSWORD CHANGE) ---
+        // --- 9b. ACCOUNT SETTINGS (USERNAME / PASSWORD / BIO / COORDS / MC_IGN / SOCIALS CHANGE) ---
         function handleAccountUpdate(e) {
             e.preventDefault();
             if(!currentUser) return;
 
             const newUsernameRaw = document.getElementById('accNewUsername').value.trim();
             const newPassword = document.getElementById('accNewPassword').value.trim();
+            const bioIn = document.getElementById('accBio').value.trim();
+            const coordsIn = document.getElementById('accCoords').value.trim();
+            const mcIgnIn = document.getElementById('accMcIgn').value.trim();
+            const discordIn = document.getElementById('accDiscord').value.trim();
+            const youtubeIn = document.getElementById('accYoutube').value.trim();
+            const tiktokIn = document.getElementById('accTiktok').value.trim();
             const currentPasswordConfirm = document.getElementById('accCurrentPassword').value.trim();
 
             if (currentPasswordConfirm !== currentUser.password) {
                 return showToast(currentLang === 'he' ? "הסיסמה הנוכחית שגויה!" : "Current password is incorrect!", "error");
             }
 
-            if (!newUsernameRaw && !newPassword) {
+            if (!newUsernameRaw && !newPassword && 
+                bioIn === (currentUser.bio || "") && 
+                coordsIn === (currentUser.coordinates || "") &&
+                mcIgnIn === (currentUser.mc_ign || "") &&
+                discordIn === (currentUser.discord || "") &&
+                youtubeIn === (currentUser.youtube || "") &&
+                tiktokIn === (currentUser.tiktok || "")) {
                 return showToast(currentLang === 'he' ? "לא הוזן שינוי כלשהו." : "No changes were entered.", "error");
             }
 
@@ -956,6 +1204,13 @@
 
             const updates = {};
             updates['users/' + currentUser.id + '/minecraft_username'] = finalUsername;
+            updates['users/' + currentUser.id + '/bio'] = bioIn;
+            updates['users/' + currentUser.id + '/coordinates'] = coordsIn;
+            updates['users/' + currentUser.id + '/mc_ign'] = mcIgnIn || finalUsername;
+            updates['users/' + currentUser.id + '/discord'] = discordIn;
+            updates['users/' + currentUser.id + '/youtube'] = youtubeIn;
+            updates['users/' + currentUser.id + '/tiktok'] = tiktokIn;
+            
             if (newPassword) { updates['users/' + currentUser.id + '/password'] = newPassword; }
             updates['users/' + currentUser.id + '/updated_at'] = new Date().toISOString();
 
@@ -976,7 +1231,17 @@
                 if (err) {
                     return showToast(currentLang === 'he' ? "שגיאה בעדכון הפרטים. נסה שוב." : "Error updating details. Please try again.", "error");
                 }
-                currentUser = { ...currentUser, minecraft_username: finalUsername, password: newPassword || currentUser.password };
+                currentUser = { 
+                    ...currentUser, 
+                    minecraft_username: finalUsername, 
+                    password: newPassword || currentUser.password, 
+                    bio: bioIn, 
+                    coordinates: coordsIn,
+                    mc_ign: mcIgnIn || finalUsername,
+                    discord: discordIn,
+                    youtube: youtubeIn,
+                    tiktok: tiktokIn
+                };
                 sessionStorage.setItem('session_user', JSON.stringify(currentUser));
 
                 document.getElementById('accNewUsername').value = "";
@@ -989,7 +1254,7 @@
             });
         }
 
-        // --- 10. APPLICATION HANDLING ---
+        // --- 10. APPLICATION & TICKET SUBMISSIONS ---
         let currentUploadedBase64 = "";
         function previewImage(event) {
             const file = event.target.files[0];
@@ -1022,7 +1287,33 @@
             });
         }
 
-        // --- 10b. TRANSPARENT CONFETTI BACKGROUND ENGINE ---
+        function handleTicketSubmit(e) {
+            e.preventDefault();
+            if(!currentUser) return;
+            
+            const ticketType = document.getElementById('ticketTypeSelect').value;
+            const ticketDesc = document.getElementById('ticketDescription').value.trim();
+            if(!ticketDesc) return;
+
+            const ticketId = "ticket_" + Date.now();
+            database.ref('tickets/' + ticketId).set({
+                id: ticketId,
+                user_id: currentUser.id,
+                minecraft_username: currentUser.minecraft_username,
+                type: ticketType,
+                description: ticketDesc,
+                status: "Pending",
+                admin_note: "",
+                created_at: new Date().toLocaleString('he-IL')
+            }, (err) => {
+                if(!err) {
+                    showToast(currentLang === 'he' ? "כרטיס התמיכה נפתח בהצלחה! הנהלת השרת תטפל בו בקרוב. 🎫" : "Support ticket opened successfully! Staff will review it soon. 🎫");
+                    document.getElementById('ticketDescription').value = "";
+                }
+            });
+        }
+
+        // --- 10b. CONFETTI ENGINE ---
         function triggerLiveConfettiBurst() {
             const canvas = document.getElementById('confettiCanvas');
             canvas.classList.remove('hidden');
@@ -1030,7 +1321,6 @@
             initConfettiParticles();
             drawConfettiLoop();
             
-            // Turn off automatic explosion after 7 seconds
             setTimeout(() => {
                 confettiActive = false;
                 canvas.classList.add('hidden');
@@ -1102,70 +1392,7 @@
             document.documentElement.lang = lang;
             document.getElementById('langToggleBtn').innerText = lang === 'he' ? 'English 🌐' : 'עברית 🌐';
             
-            const str = T[lang];
-            document.getElementById('text_appLoader').innerText = str.appLoader;
-            document.getElementById('text_heroTitle').innerText = str.heroTitle;
-            document.getElementById('text_heroDesc').innerHTML = str.heroDesc;
-            document.getElementById('text_heroIpLabel').innerText = str.heroIpLabel;
-            document.getElementById('text_heroDiscordLabel').innerText = str.heroDiscordLabel;
-            document.getElementById('text_heroDiscordSub').innerText = str.heroDiscordSub;
-            document.getElementById('text_annHead').innerHTML = `<i class="fa-solid fa-bullhorn animate-pulse"></i> ${str.annHead}`;
-            document.getElementById('text_statPlayers').innerText = str.statPlayers;
-            document.getElementById('text_statApproved').innerText = str.statApproved;
-            document.getElementById('text_statCommon').innerText = str.statCommon;
-            document.getElementById('text_leadTitle').innerHTML = `<i class="fa-solid fa-crown animate-bounce"></i> ${str.leadTitle}`;
-            document.getElementById('text_leadSub').innerText = str.leadSub;
-            document.getElementById('tabLogin').innerText = str.tabLogin;
-            document.getElementById('tabRegister').innerText = str.tabRegister;
-            document.getElementById('lblLoginUser').innerText = str.lblLoginUser;
-            document.getElementById('lblLoginPass').innerText = str.lblLoginPass;
-            document.getElementById('btnLogin').innerText = str.btnLogin;
-            document.getElementById('lblRegUser').innerText = str.lblRegUser;
-            document.getElementById('lblRegPass').innerText = str.lblRegPass;
-            document.getElementById('btnRegText').innerText = str.btnReg;
-            document.getElementById('text_dashWelcome').innerText = str.dashWelcome;
-            document.getElementById('text_dashProgress').innerText = str.dashProgress;
-            document.getElementById('text_appTitle').innerHTML = `<i class="fa-solid fa-paper-plane"></i> ${str.appTitle}`;
-            document.getElementById('lblFormUser').innerText = str.lblFormUser;
-            document.getElementById('lblFormRank').innerText = str.lblFormRank;
-            document.getElementById('lblFormProof').innerText = str.lblFormProof;
-            document.getElementById('text_uploadPlaceholderTitle').innerText = str.lblFormUpload;
-            document.getElementById('lblFormNotes').innerText = str.lblFormNotes;
-            document.getElementById('submitAppBtn').innerText = lang === 'he' ? '🚀 שלח בקשה לאישור' : '🚀 Submit Application';
-            document.getElementById('text_histTitle').innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> ${str.histTitle}`;
-
-            document.getElementById('text_accSettingsTitle').innerHTML = `<i class="fa-solid fa-gear"></i> ${str.accSettingsTitle}`;
-            document.getElementById('lblAccNewUser').innerText = str.lblAccNewUser;
-            document.getElementById('lblAccNewPass').innerText = str.lblAccNewPass;
-            document.getElementById('lblAccCurrentPass').innerText = str.lblAccCurrentPass;
-            document.getElementById('btnAccUpdate').innerText = str.btnAccUpdate;
-            document.getElementById('accNewUsername').placeholder = str.phAccNewUser;
-            document.getElementById('accNewPassword').placeholder = str.phAccNewPass;
-            document.getElementById('accCurrentPassword').placeholder = str.phAccCurrentPass;
-
-            document.getElementById('text_adminPanelTitle').innerHTML = `<i class="fa-solid fa-toolbox"></i> ${str.adminPanelTitle}`;
-            document.getElementById('text_adminPanelSub').innerText = str.adminPanelSub;
-            document.getElementById('text_adminUsersListTitle').innerText = str.adminUsersListTitle;
-            document.getElementById('text_adminAnnTitle').innerText = str.adminAnnTitle;
-            document.getElementById('btnAnnPublish').innerText = str.btnAnnPublish;
-            document.getElementById('text_catalogTitle').innerHTML = `<i class="fa-solid fa-layer-group text-cyan-400"></i> ${str.catalogTitle}`;
-            document.getElementById('text_footerText').innerText = str.footerText;
-            document.getElementById('adminSearch').placeholder = str.phSearchPlayer;
-            document.getElementById('rankSearchInput').placeholder = str.phSearchRank;
-            document.getElementById('loginUser').placeholder = str.phLoginUser;
-            document.getElementById('loginPassword').placeholder = str.phLoginPass;
-            document.getElementById('regUser').placeholder = str.phRegUser;
-            document.getElementById('regPassword').placeholder = str.phRegPass;
-            document.getElementById('newAnnText').placeholder = str.phAnnText;
-            document.getElementById('optAllStatus').innerText = str.allStatuses;
-            document.getElementById('optPending').innerText = str.statusPending;
-            document.getElementById('optApproved').innerText = str.statusApproved;
-            document.getElementById('optRejected').innerText = str.statusRejected;
-
-            renderRankCatalog();
-            renderLeaderboard();
-            renderAnnouncements();
-            renderCommunityStats();
+            setLanguage(currentLang);
             
             if (currentUser) {
                 const updatedMe = Object.values(cloud_users).find(u => u.minecraft_username.toLowerCase() === currentUser.minecraft_username.toLowerCase());
@@ -1233,6 +1460,18 @@
                 ? `דרגה נוכחית: ${currentUser.current_rank} (${curIdx + 1} מתוך ${RANKS_DATA.length})`
                 : `Current Rank: ${currentUser.current_rank} (${curIdx + 1} of ${RANKS_DATA.length})`;
 
+            // Live Minecraft Head Preview implementation
+            const activeSkinIgn = currentUser.mc_ign || currentUser.minecraft_username;
+            document.getElementById('dashSkinContainer').innerHTML = `<img src="https://visage.surgeplay.com/face/64/${encodeURIComponent(activeSkinIgn)}" class="w-full h-full object-contain drop-shadow" onerror="this.src='https://visage.surgeplay.com/face/64/X-Steve'">`;
+
+            // Populate Account settings form fields directly 
+            document.getElementById('accBio').value = currentUser.bio || "";
+            document.getElementById('accCoords').value = currentUser.coordinates || "";
+            document.getElementById('accMcIgn').value = currentUser.mc_ign || "";
+            document.getElementById('accDiscord').value = currentUser.discord || "";
+            document.getElementById('accYoutube').value = currentUser.youtube || "";
+            document.getElementById('accTiktok').value = currentUser.tiktok || "";
+
             const memberSinceBadge = document.getElementById('dashMemberSince');
             if(currentUser.created_at) {
                 const dateObj = new Date(currentUser.created_at);
@@ -1255,45 +1494,70 @@
                 document.getElementById('submitAppBtn').disabled = true; 
             }
 
+            // Render Applications List
             const listWrapper = document.getElementById('playerAppList'); 
             listWrapper.innerHTML = "";
             const apps = Object.values(cloud_applications).filter(a => a.user_id === currentUser.id).reverse();
             if (apps.length === 0) { 
-                const noReqMsg = currentLang === 'he' ? 'טרם הוגשו בקשות לפרופיל זה.' : 'No requests submitted yet for this profile.';
-                listWrapper.innerHTML = `<div class="text-sm text-gray-500 text-center py-8">${noReqMsg}</div>`; 
+                listWrapper.innerHTML = `<div class="text-sm text-gray-500 text-center py-8">${currentLang === 'he' ? 'טרם הוגשו בקשות דרגה.' : 'No requests submitted yet.'}</div>`; 
             } else {
                 apps.forEach(app => {
-                    let statusLabel = '';
-                    if (app.status === 'Pending') statusLabel = currentLang === 'he' ? '🟡 ממתין' : '🟡 Pending';
-                    if (app.status === 'Approved') statusLabel = currentLang === 'he' ? '🟢 אושר' : '🟢 Approved';
-                    if (app.status === 'Rejected') statusLabel = currentLang === 'he' ? '🔴 נדחה' : '🔴 Rejected';
-
-                    let statusBadge = `<span class="bg-yellow-500/20 text-yellow-400 px-2.5 py-1 rounded-lg text-xs font-bold">${statusLabel}</span>`;
-                    if (app.status === 'Approved') statusBadge = `<span class="bg-emerald-500/20 text-emerald-400 px-2.5 py-1 rounded-lg text-xs font-bold">${statusLabel}</span>`;
-                    if (app.status === 'Rejected') statusBadge = `<span class="bg-red-500/20 text-red-400 px-2.5 py-1 rounded-lg text-xs font-bold">${statusLabel}</span>`;
-                    
-                    const titleText = currentLang === 'he' ? 'בקשה לדרגת:' : 'Application for:';
-                    const notesText = currentLang === 'he' ? 'הערה:' : 'Note:';
-                    const adminNotesText = currentLang === 'he' ? 'תגובת אדמין:' : 'Admin Note:';
-                    const defaultNotes = app.notes || (currentLang === 'he' ? 'אין' : 'None');
+                    let statusLabel = app.status;
+                    let badgeColor = "bg-yellow-500/20 text-yellow-400";
+                    if(app.status === 'Approved') { statusLabel = currentLang === 'he' ? '🟢 אושר' : '🟢 Approved'; badgeColor = "bg-emerald-500/20 text-emerald-400"; }
+                    if(app.status === 'Rejected') { statusLabel = currentLang === 'he' ? '🔴 נדחה' : '🔴 Rejected'; badgeColor = "bg-red-500/20 text-red-400"; }
+                    if(app.status === 'Pending') { statusLabel = currentLang === 'he' ? '🟡 ממתין' : '🟡 Pending'; }
 
                     const div = document.createElement('div'); 
                     div.className = "bg-white/5 border border-white/5 rounded-xl p-4 space-y-3";
                     div.innerHTML = `
                         <div class="flex justify-between items-center flex-wrap gap-2">
-                            <div class="text-sm font-bold text-white">${titleText} <span class="text-cyan-400 font-minecraft">${app.requested_rank}</span></div>
-                            ${statusBadge}
+                            <div class="text-sm font-bold text-white">${currentLang === 'he' ? 'בקשה לדרגת:' : 'Application for:'} <span class="text-cyan-400 font-minecraft">${app.requested_rank}</span></div>
+                            <span class="${badgeColor} px-2.5 py-1 rounded-lg text-xs font-bold">${statusLabel}</span>
                         </div>
                         <div class="flex gap-4 items-center">
                             <img src="${app.screenshot_url}" class="w-16 h-12 object-cover rounded-md border border-white/10 cursor-pointer hover:scale-105 transition-transform" onclick="window.open('${app.screenshot_url}')">
-                            <div class="text-xs text-gray-300 italic">${notesText} "${defaultNotes}"</div>
+                            <div class="text-xs text-gray-300 italic">${currentLang === 'he' ? 'הערה:' : 'Note:'} "${app.notes || '---'}"</div>
                         </div>
-                        ${app.admin_note ? `<div class="text-xs bg-black/40 p-2.5 rounded-lg border border-white/5 text-gray-300"><strong>${adminNotesText}</strong> ${app.admin_note}</div>` : ""}
+                        ${app.admin_note ? `<div class="text-xs bg-black/40 p-2.5 rounded-lg border border-white/5 text-gray-300"><strong>${currentLang === 'he' ? 'תגובת אדמין:' : 'Admin Note:'}</strong> ${app.admin_note}</div>` : ""}
                     `;
                     listWrapper.appendChild(div);
                 });
             }
 
+            // Render Personal Support Tickets list
+            const ticketsWrapper = document.getElementById('playerTicketsList');
+            ticketsWrapper.innerHTML = "";
+            const userTickets = Object.values(cloud_tickets).filter(t => t.user_id === currentUser.id).reverse();
+            if(userTickets.length === 0) {
+                ticketsWrapper.innerHTML = `<div class="text-sm text-gray-500 text-center py-8">${currentLang === 'he' ? 'אין כרטיסי תמיכה פעילים.' : 'No support tickets found.'}</div>`;
+            } else {
+                userTickets.forEach(ticket => {
+                    let stText = ticket.status;
+                    let stClass = "bg-yellow-500/20 text-yellow-400";
+                    if(ticket.status === 'Pending') stText = T[currentLang].statusPending;
+                    if(ticket.status === 'InProgress') { stText = T[currentLang].statusInProgress; stClass = "bg-blue-500/20 text-blue-400"; }
+                    if(ticket.status === 'Resolved') { stText = T[currentLang].statusResolved; stClass = "bg-emerald-500/20 text-emerald-400"; }
+                    if(ticket.status === 'Canceled') { stText = T[currentLang].statusCanceled; stClass = "bg-red-500/20 text-red-400"; }
+
+                    const typeIcon = ticket.type === 'Griefing' ? '❌' : (ticket.type === 'Bug' ? '🐛' : '❓');
+
+                    const block = document.createElement('div');
+                    block.className = "bg-white/5 border border-white/5 rounded-xl p-4 space-y-2";
+                    block.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <div class="text-xs font-bold text-gray-300">${T[currentLang].ticketType} <span class="text-rose-400 font-minecraft">${typeIcon} ${ticket.type}</span></div>
+                            <span class="${stClass} px-2 py-0.5 rounded text-[11px] font-bold">${stText}</span>
+                        </div>
+                        <div class="text-xs text-gray-200 bg-black/20 p-2 rounded border border-white/5 font-mono break-words">${ticket.description}</div>
+                        ${ticket.admin_note ? `<div class="text-xs bg-rose-950/10 p-2 rounded border border-rose-500/10 text-gray-300"><strong>${T[currentLang].adminReply}</strong> ${ticket.admin_note}</div>` : ""}
+                        <div class="text-[10px] text-gray-500 font-mono text-left">${ticket.created_at}</div>
+                    `;
+                    ticketsWrapper.appendChild(block);
+                });
+            }
+
+            // Timeline calculations
             const timelineWrapper = document.getElementById('dashTimelineList');
             timelineWrapper.innerHTML = "";
             const historyRecords = Object.values(cloud_history).filter(h => h.user_id === currentUser.id).sort((a,b) => b.id.localeCompare(a.id));
@@ -1304,14 +1568,9 @@
                 historyRecords.forEach(record => {
                     const node = document.createElement('div');
                     node.className = "relative group";
-                    
                     const oldRankObj = RANKS_DATA.find(r => r.id === record.old_rank) || {icon: "▫"};
                     const newRankObj = RANKS_DATA.find(r => r.id === record.new_rank) || {icon: "⭐"};
                     
-                    const subText = currentLang === 'he' 
-                        ? `שודרג מ-${oldRankObj.icon} ${record.old_rank} על ידי ${record.approved_by}` 
-                        : `Upgraded from ${oldRankObj.icon} ${record.old_rank} by ${record.approved_by}`;
-
                     node.innerHTML = `
                         <div class="absolute -right-[31px] ltr:right-auto ltr:-left-[31px] top-1 w-4 h-4 rounded-full bg-cyan-400 border-4 border-mcDark group-hover:scale-125 transition-transform"></div>
                         <div class="text-xs text-gray-500 font-mono mb-0.5">${record.approved_at || ''}</div>
@@ -1319,10 +1578,30 @@
                             <span>${newRankObj.icon}</span> 
                             <span class="text-yellow-400 font-minecraft font-black">${record.new_rank}</span>
                         </div>
-                        <div class="text-xs text-gray-400 mt-1">${subText}</div>
+                        <div class="text-xs text-gray-400 mt-1">${currentLang === 'he' ? `שודרג מ-${oldRankObj.icon} ${record.old_rank} על ידי ${record.approved_by}` : `Upgraded from ${oldRankObj.icon} ${record.old_rank} by ${record.approved_by}`}</div>
                     `;
                     timelineWrapper.appendChild(node);
                 });
+            }
+        }
+
+        function switchAdminSubTab(targetTab) {
+            activeAdminSubTab = targetTab;
+            const btnApps = document.getElementById('adminTabBtnApps');
+            const btnTickets = document.getElementById('adminTabBtnTickets');
+            const queueApps = document.getElementById('adminAppsQueue');
+            const queueTickets = document.getElementById('adminTicketsQueue');
+
+            if(targetTab === 'apps') {
+                btnApps.className = "pb-3 border-b-2 border-red-500 text-red-400";
+                btnTickets.className = "pb-3 border-b-2 border-transparent text-gray-400";
+                queueApps.classList.remove('hidden');
+                queueTickets.classList.add('hidden');
+            } else {
+                btnTickets.className = "pb-3 border-b-2 border-red-500 text-red-400";
+                btnApps.className = "pb-3 border-b-2 border-transparent text-gray-400";
+                queueTickets.classList.remove('hidden');
+                queueApps.classList.add('hidden');
             }
         }
 
@@ -1330,82 +1609,112 @@
             if(!currentUser || currentUser.role !== 'admin') return;
             const search = document.getElementById('adminSearch').value.toLowerCase();
             const filter = document.getElementById('adminFilterStatus').value;
-            const queue = document.getElementById('adminAppsQueue'); 
-            queue.innerHTML = "";
             
+            // Render Applications Queue Tab
+            const queueApps = document.getElementById('adminAppsQueue'); 
+            queueApps.innerHTML = "";
             let apps = Object.values(cloud_applications).reverse().filter(a => {
-                const matchName = a.minecraft_username.toLowerCase().includes(search);
-                const matchRank = a.requested_rank.toLowerCase().includes(search);
+                const matchSearch = a.minecraft_username.toLowerCase().includes(search) || a.requested_rank.toLowerCase().includes(search);
                 const matchStatus = (filter === 'All' || a.status === filter);
-                return (matchName || matchRank) && matchStatus;
+                return matchSearch && matchStatus;
             });
 
             if(apps.length === 0) { 
-                const noAppsMsg = currentLang === 'he' ? 'אין בקשות בסינון זה.' : 'No applications found.';
-                queue.innerHTML = `<div class="glass-card text-center text-sm text-gray-400 py-8 rounded-xl">${noAppsMsg}</div>`; 
+                queueApps.innerHTML = `<div class="glass-card text-center text-sm text-gray-400 py-8 rounded-xl">${currentLang === 'he' ? 'אין בקשות דרגה בסינון זה.' : 'No applications found.'}</div>`; 
             } else {
                 apps.forEach(app => {
                     const block = document.createElement('div'); 
-                    let borderClass = 'border-red-500/20';
-                    if (app.status === 'Pending') borderClass = 'border-yellow-500/20 bg-yellow-500/[0.01]';
-                    if (app.status === 'Approved') borderClass = 'border-emerald-500/20';
-                    
+                    let borderClass = app.status === 'Pending' ? 'border-yellow-500/20 bg-yellow-500/[0.01]' : (app.status === 'Approved' ? 'border-emerald-500/20' : 'border-red-500/20');
                     block.className = `glass-card p-5 rounded-xl border flex flex-col md:flex-row gap-6 justify-between ${borderClass}`;
                     
-                    let actionHtml = '';
-                    if(app.status === 'Pending') {
-                        const placeholderText = currentLang === 'he' ? 'סיבת אישור / דחייה...' : 'Reason...';
-                        const deleteText = currentLang === 'he' ? 'מחק בקשה' : 'Delete app';
-                        actionHtml = `
-                            <div class="flex flex-col gap-2 justify-center w-full md:w-48 border-t md:border-t-0 md:border-r border-white/10 pt-4 md:pt-0 md:pr-4">
-                                <input type="text" id="adminNote_${app.id}" placeholder="${placeholderText}" class="w-full bg-black/60 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none">
-                                <div class="flex gap-2">
-                                    <button onclick="processApplication('${app.id}', 'Approved')" class="w-1/2 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-1.5 rounded-lg text-xs transition-all">✅ Approve</button>
-                                    <button onclick="processApplication('${app.id}', 'Rejected')" class="w-1/2 bg-red-500 hover:bg-red-400 text-white font-bold py-1.5 rounded-lg text-xs transition-all">❌ Reject</button>
-                                </div>
-                                <button onclick="deleteApplication('${app.id}')" class="text-left text-[10px] text-red-400/60 underline mt-1">${deleteText}</button>
+                    let actionHtml = app.status === 'Pending' ? `
+                        <div class="flex flex-col gap-2 justify-center w-full md:w-48 border-t md:border-t-0 md:border-r border-white/10 pt-4 md:pt-0 md:pr-4">
+                            <input type="text" id="adminNote_${app.id}" placeholder="סיבת אישור / דחייה..." class="w-full bg-black/60 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none">
+                            <div class="flex gap-2">
+                                <button onclick="processApplication('${app.id}', 'Approved')" class="w-1/2 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-1.5 rounded-lg text-xs transition-all">Approve</button>
+                                <button onclick="processApplication('${app.id}', 'Rejected')" class="w-1/2 bg-red-500 hover:bg-red-400 text-white font-bold py-1.5 rounded-lg text-xs transition-all">Reject</button>
                             </div>
-                        `;
-                    } else {
-                        const deleteLabel = currentLang === 'he' ? 'מחק' : 'Delete';
-                        actionHtml = `
-                            <div class="flex items-center justify-center md:w-24">
-                                <button onclick="deleteApplication('${app.id}')" class="text-xs text-gray-500 hover:text-red-400 border border-white/5 px-2 py-1 rounded">
-                                    <i class="fa-solid fa-trash-can"></i> ${deleteLabel}
-                                </button>
-                            </div>
-                        `;
-                    }
-
-                    const notesLabel = currentLang === 'he' ? 'הערות:' : 'Notes:';
-                    const rankLabel = currentLang === 'he' ? 'מבקש דרגת:' : 'Requests rank:';
-                    const defaultNotes = app.notes || (currentLang === 'he' ? 'אין' : 'None');
+                        </div>
+                    ` : `<button onclick="deleteApplication('${app.id}')" class="text-xs text-gray-500 hover:text-red-400 h-fit self-center border border-white/5 px-2 py-1 rounded">Delete</button>`;
 
                     block.innerHTML = `
                         <div class="space-y-3 flex-1">
                             <div class="flex items-center gap-2 flex-wrap">
                                 <span class="bg-cyan-400 text-black font-minecraft text-xs px-2 py-0.5 rounded font-black">${app.minecraft_username}</span>
-                                <span class="text-sm font-bold text-white">${rankLabel} <span class="text-purple-400 font-minecraft">${app.requested_rank}</span></span>
-                                <span class="text-sm text-gray-500 mr-auto">${app.created_at}</span>
+                                <span class="text-sm font-bold text-white">Requests: <span class="text-purple-400 font-minecraft">${app.requested_rank}</span></span>
+                                <span class="text-xs text-gray-500 mr-auto">${app.created_at}</span>
                             </div>
-                            <div class="text-xs text-gray-400">${notesLabel} <span class="text-gray-200">"${defaultNotes}"</span></div>
+                            <div class="text-xs text-gray-400">Notes: <span class="text-gray-200">"${app.notes || '---'}"</span></div>
                             <img src="${app.screenshot_url}" class="rounded-lg max-h-36 border border-white/10 shadow-md cursor-pointer" onclick="window.open('${app.screenshot_url}')">
                         </div>
                         ${actionHtml}
                     `;
-                    queue.appendChild(block);
+                    queueApps.appendChild(block);
                 });
             }
 
+            // NEW: Render Support Tickets Tab For Admin Control Panel
+            const queueTickets = document.getElementById('adminTicketsQueue');
+            queueTickets.innerHTML = "";
+            let tickets = Object.values(cloud_tickets).reverse().filter(t => {
+                const matchSearch = t.minecraft_username.toLowerCase().includes(search) || t.description.toLowerCase().includes(search) || t.type.toLowerCase().includes(search);
+                // Map filter options safely
+                let tStatusMapped = t.status;
+                if (filter === 'Approved' && (t.status === 'Resolved')) tStatusMapped = 'Approved';
+                if (filter === 'Rejected' && (t.status === 'Canceled')) tStatusMapped = 'Rejected';
+                const matchStatus = (filter === 'All' || tStatusMapped === filter || t.status === filter);
+                return matchSearch && matchStatus;
+            });
+
+            if(tickets.length === 0) {
+                queueTickets.innerHTML = `<div class="glass-card text-center text-sm text-gray-400 py-8 rounded-xl">${currentLang === 'he' ? 'אין כרטיסי תמיכה בסינון זה.' : 'No tickets found.'}</div>`;
+            } else {
+                tickets.forEach(ticket => {
+                    const block = document.createElement('div');
+                    let borderClass = "border-yellow-500/20 bg-yellow-500/[0.01]";
+                    if(ticket.status === 'InProgress') borderClass = "border-blue-500/30 bg-blue-950/5";
+                    if(ticket.status === 'Resolved') borderClass = "border-emerald-500/20";
+                    if(ticket.status === 'Canceled') borderClass = "border-red-500/20";
+
+                    let actionHtml = (ticket.status === 'Pending' || ticket.status === 'InProgress') ? `
+                        <div class="flex flex-col gap-2 justify-center w-full md:w-56 border-t md:border-t-0 md:border-r border-white/10 pt-4 md:pt-0 md:pr-4">
+                            <input type="text" id="adminTicketReply_${ticket.id}" placeholder="כתוב מענה לשחקן..." class="w-full bg-black/60 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none">
+                            <div class="grid grid-cols-3 gap-1">
+                                <button onclick="processTicket('${ticket.id}', 'InProgress')" class="bg-blue-500 hover:bg-blue-400 text-black font-bold py-1.5 rounded text-[10px] transition-all">טיפול</button>
+                                <button onclick="processTicket('${ticket.id}', 'Resolved')" class="bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-1.5 rounded text-[10px] transition-all">טופל</button>
+                                <button onclick="processTicket('${ticket.id}', 'Canceled')" class="bg-red-500 hover:bg-red-400 text-white font-bold py-1.5 rounded text-[10px] transition-all">ביטול</button>
+                            </div>
+                        </div>
+                    ` : `<button onclick="deleteTicket('${ticket.id}')" class="text-xs text-gray-500 hover:text-red-400 h-fit self-center border border-white/5 px-2 py-1 rounded">Delete</button>`;
+
+                    block.className = `glass-card p-5 rounded-xl border flex flex-col md:flex-row gap-6 justify-between ${borderClass}`;
+                    block.innerHTML = `
+                        <div class="space-y-2 flex-1">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="bg-rose-500 text-white font-minecraft text-xs px-2 py-0.5 rounded font-bold">${ticket.minecraft_username}</span>
+                                <span class="text-xs font-bold bg-white/5 border border-white/10 px-2 py-0.5 rounded text-gray-300">${ticket.type}</span>
+                                <span class="text-xs text-gray-400 font-bold ml-auto">${ticket.status.toUpperCase()}</span>
+                            </div>
+                            <div class="text-sm text-gray-100 bg-black/40 p-3 rounded-xl border border-white/5 font-mono break-words">${ticket.description}</div>
+                            ${ticket.admin_note ? `<div class="text-xs bg-black/60 p-2 rounded text-gray-400"><strong>מענה קודם:</strong> ${ticket.admin_note}</div>` : ""}
+                            <div class="text-[10px] text-gray-500 font-mono">${ticket.created_at}</div>
+                        </div>
+                        ${actionHtml}
+                    `;
+                    queueTickets.appendChild(block);
+                });
+            }
+
+            // Render Player Settings List Row
             const usersList = document.getElementById('adminUsersList'); usersList.innerHTML = "";
             Object.values(cloud_users).forEach(u => {
                 const isSelf = u.minecraft_username.toLowerCase() === 'adminsummer';
-                const rankLabelText = currentLang === 'he' ? 'דרגה:' : 'Rank:';
                 const row = document.createElement('div'); row.className = "flex items-center justify-between text-xs bg-black/40 p-2.5 rounded-lg border border-white/5 gap-2";
-                row.innerHTML = `<div class="font-bold text-white"><div>${u.minecraft_username}</div><div class="text-[10px] text-purple-400 font-minecraft font-normal">${rankLabelText} ${u.current_rank}</div></div><div class="flex items-center gap-2"><select onchange="manuallyChangeRank('${u.id}', this.value)" class="bg-mcDark border border-white/10 rounded px-1 py-0.5 text-[11px] text-gray-300 focus:outline-none">${RANKS_DATA.map(r => `<option value="${r.id}" ${u.current_rank === r.id ? 'selected' : ''}>${r.name}</option>`).join('')}</select>${!isSelf ? `<button onclick="deleteUser('${u.id}', '${u.minecraft_username}')" class="text-red-500 hover:text-red-400 px-1 py-0.5 transition-colors"><i class="fa-solid fa-user-minus"></i></button>` : ''}</div>`;
+                row.innerHTML = `<div class="font-bold text-white"><div>${u.minecraft_username}</div><div class="text-[10px] text-purple-400 font-minecraft font-normal">Rank: ${u.current_rank}</div></div><div class="flex items-center gap-2"><select onchange="manuallyChangeRank('${u.id}', this.value)" class="bg-mcDark border border-white/10 rounded px-1 py-0.5 text-[11px] text-gray-300 focus:outline-none">${RANKS_DATA.map(r => `<option value="${r.id}" ${u.current_rank === r.id ? 'selected' : ''}>${r.name}</option>`).join('')}</select>${!isSelf ? `<button onclick="deleteUser('${u.id}', '${u.minecraft_username}')" class="text-red-500 hover:text-red-400 px-1 py-0.5 transition-colors"><i class="fa-solid fa-user-minus"></i></button>` : ''}</div>`;
                 usersList.appendChild(row);
             });
 
+            // Announcements queue view
             const adminAnnQueue = document.getElementById('adminAnnouncementsQueue');
             if(adminAnnQueue) {
                 adminAnnQueue.innerHTML = ""; const anns = Object.values(cloud_announcements).reverse();
@@ -1422,6 +1731,25 @@
             }
         }
 
+        // NEW: Support Tickets Administration handlers
+        function processTicket(ticketId, newStatus) {
+            const noteInput = document.getElementById(`adminTicketReply_${ticketId}`);
+            const replyText = noteInput ? noteInput.value.trim() : "";
+            
+            const updates = { status: newStatus };
+            if(replyText) updates.admin_note = replyText;
+
+            database.ref('tickets/' + ticketId).update(updates, (err) => {
+                if(!err) showToast(currentLang === 'he' ? "הכרטיס עודכן בהצלחה!" : "Ticket updated successfully!");
+            });
+        }
+
+        function deleteTicket(ticketId) {
+            if(confirm(currentLang === 'he' ? "למחוק לחלוטין כרטיס זה?" : "Delete ticket?")) {
+                database.ref('tickets/' + ticketId).remove();
+            }
+        }
+
         function manuallyChangeRank(userId, newRank) {
             const tu = cloud_users[userId]; if(!tu) return;
             database.ref('users/' + userId).update({ current_rank: newRank, updated_at: new Date().toISOString() });
@@ -1430,7 +1758,91 @@
 
         function deleteApplication(appId) { if(confirm("מחק?")) database.ref('applications/' + appId).remove(); }
 
-        setLanguage(currentLang);
+        // --- 12. PLAYER PROFILE MODAL ---
+        function openPlayerProfile(userId) {
+            const u = cloud_users[userId];
+            if (!u) return;
+
+            const rankObj = RANKS_DATA.find(r => r.id === u.current_rank) || RANKS_DATA[0];
+            const str = T[currentLang];
+
+            document.getElementById('profileUsername').innerText = u.minecraft_username;
+
+            // Render Full Body 3D Render Skin Preview cleanly
+            const profileActiveIgn = u.mc_ign || u.minecraft_username;
+            document.getElementById('profileSkinContainer').innerHTML = `<img src="https://visage.surgeplay.com/full/128/${encodeURIComponent(profileActiveIgn)}" class="h-full w-auto object-contain drop-shadow-[0_4px_12px_rgba(34,211,238,0.25)]" onerror="this.src='https://visage.surgeplay.com/full/128/X-Steve'">`;
+
+            const badgeStyle = rankObj.style.includes('rank-god')
+                ? 'rank-god px-3 py-1 rounded-full text-sm font-minecraft font-black'
+                : rankObj.style.includes('rank-rainbow')
+                    ? 'rank-rainbow px-3 py-1 rounded-full text-sm font-minecraft font-black border'
+                    : `bg-black/40 border px-3 py-1 rounded-full text-sm font-minecraft font-bold ${rankObj.style}`;
+            document.getElementById('profileRankBadge').innerHTML =
+                `<span class="inline-flex items-center gap-1.5 ${badgeStyle}">${rankObj.icon} ${rankObj.name}</span>`;
+
+            // Social networks rendering row engine logic
+            const socialWrapper = document.getElementById('profileSocialLinks');
+            socialWrapper.innerHTML = "";
+            
+            if (u.discord) {
+                const discUrl = u.discord.startsWith('http') ? u.discord : `https://discord.com`;
+                socialWrapper.innerHTML += `<a href="${discUrl}" target="_blank" title="Discord: ${u.discord}" class="w-8 h-8 rounded-xl bg-white/5 border border-white/10 hover:border-[#5865F2]/50 text-gray-400 hover:text-[#5865F2] hover:bg-[#5865F2]/10 flex items-center justify-center transition-all text-sm"><i class="fa-brands fa-discord"></i></a>`;
+            }
+            if (u.youtube) {
+                socialWrapper.innerHTML += `<a href="${u.youtube}" target="_blank" title="YouTube" class="w-8 h-8 rounded-xl bg-white/5 border border-white/10 hover:border-[#FF0000]/50 text-gray-400 hover:text-[#FF0000] hover:bg-[#FF0000]/10 flex items-center justify-center transition-all text-sm"><i class="fa-brands fa-youtube"></i></a>`;
+            }
+            if (u.tiktok) {
+                socialWrapper.innerHTML += `<a href="${u.tiktok}" target="_blank" title="TikTok" class="w-8 h-8 rounded-xl bg-white/5 border border-white/10 hover:border-[#FE2C55]/50 text-gray-400 hover:text-[#FE2C55] hover:bg-[#FE2C55]/10 flex items-center justify-center transition-all text-sm"><i class="fa-brands fa-tiktok"></i></a>`;
+            }
+
+            document.getElementById('profileBio').innerText = (u.bio && u.bio.trim()) ? u.bio.trim() : str.profileBioEmpty;
+            document.getElementById('profileCoordsText').innerText = (u.coordinates && u.coordinates.trim()) ? u.coordinates.trim() : str.profileCoordsEmpty;
+
+            const histList = document.getElementById('profileHistoryList');
+            histList.innerHTML = '';
+            const records = Object.values(cloud_history)
+                .filter(h => h.user_id === userId)
+                .sort((a, b) => b.id.localeCompare(a.id))
+                .slice(0, 5);
+
+            if (records.length === 0) {
+                histList.innerHTML = `<div class="text-xs text-gray-500 italic py-2">${str.profileHistoryEmpty}</div>`;
+            } else {
+                records.forEach(record => {
+                    const newRankObj = RANKS_DATA.find(r => r.id === record.new_rank) || { icon: '⭐', name: record.new_rank };
+                    const oldRankObj = RANKS_DATA.find(r => r.id === record.old_rank) || { icon: '▫', name: record.old_rank };
+                    const subText = currentLang === 'he'
+                        ? `מ-${oldRankObj.icon} ${record.old_rank} על ידי ${record.approved_by}`
+                        : `from ${oldRankObj.icon} ${record.old_rank} by ${record.approved_by}`;
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center justify-between bg-black/30 rounded-xl px-3 py-2.5 border border-white/5 gap-3';
+                    div.innerHTML = `
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <span class="text-xl flex-shrink-0">${newRankObj.icon}</span>
+                            <div class="min-w-0">
+                                <div class="text-sm font-black text-yellow-400 font-minecraft">${record.new_rank}</div>
+                                <div class="text-[10px] text-gray-400 truncate">${subText}</div>
+                            </div>
+                        </div>
+                        <div class="text-[10px] text-gray-500 font-mono whitespace-nowrap flex-shrink-0">${record.approved_at || ''}</div>
+                    `;
+                    histList.appendChild(div);
+                });
+            }
+
+            document.getElementById('playerProfileModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closePlayerProfile() {
+            document.getElementById('playerProfileModal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closePlayerProfile();
+        });
+
         startCloudSynchronization();
     </script>
 </body>
